@@ -47,7 +47,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-const std::string DEFAULT_MESH_FILENAME("data/head.off");
+const std::string DEFAULT_MESH_FILENAME("data/monkey.off");
 
 // window parameters
 GLFWwindow *g_window = nullptr;
@@ -256,27 +256,6 @@ struct Scene {
 
     void render()
   {
-
-    //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
-    // TODO: first, render the shadow maps
-    glEnable(GL_CULL_FACE);
-
-    shadomMapShader->use();
-    for(int i=0; i<lights.size(); ++i) {
-      Light &light = lights[i];
-      light.setupCameraForShadowMapping(shadomMapShader, scene_center, scene_radius*1.5f);
-      light.bindShadowMap();
-
-      // TODO: render the objects in the scene
-
-      if(saveShadowMapsPpm) {
-        light.shadowMap.savePpmFile(std::string("shadom_map_")+std::to_string(i)+std::string(".ppm"));
-      }
-    }
-    shadomMapShader->stop();
-    saveShadowMapsPpm = false;
-    //>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-
     //<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
     // TODO: second, render the scene
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -486,13 +465,6 @@ void initOpenGL()
   try {
     g_scene.mainShader = ShaderProgram::genBasicShaderProgram("src/vertexShader.glsl", "src/fragmentShader.glsl");
     g_scene.mainShader->stop();
-
-  } catch(std::exception &e) {
-    exitOnCriticalError(std::string("[Error loading shader program]") + e.what());
-  }
-  try {
-    g_scene.shadomMapShader = ShaderProgram::genBasicShaderProgram("src/vertexShaderShadowMap.glsl", "src/fragmentShaderShadowMap.glsl");
-    g_scene.shadomMapShader->stop();
 
   } catch(std::exception &e) {
     exitOnCriticalError(std::string("[Error loading shader program]") + e.what());
