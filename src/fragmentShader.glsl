@@ -9,7 +9,6 @@ struct LightSource {
 
 int numberOfLights = 3;
 uniform LightSource lightSources[3];
-// TODO: shadow maps
 
 struct Material {
   vec3 albedo;
@@ -29,7 +28,6 @@ out vec4 colorOut; // shader output: the color response attached to this fragmen
 
 float pi = 3.1415927;
 
-// TODO: shadows
 void main() {
   vec3 n = normalize(fNormal);
   vec3 wo = normalize(camPos - fPosition); // unit vector pointing to the camera

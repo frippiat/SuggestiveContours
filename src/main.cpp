@@ -124,18 +124,10 @@ GLuint loadTextureFromFileToGPU(const std::string &filename)
 
 struct Light {
   glm::mat4 depthMVP;
-  unsigned int shadowMapTexOnGPU;
-
   glm::vec3 position;
   glm::vec3 color;
   float intensity;
 
-  void setupCameraForShadowMapping(
-    std::shared_ptr<ShaderProgram> shader_shadow_map_Ptr,
-    const glm::vec3 scene_center,
-    const float scene_radius)
-  {
-  }
 };
 
 
@@ -152,11 +144,8 @@ struct Scene {
   glm::vec3 scene_center = glm::vec3(0);
   float scene_radius = 1.f;
 
-  // shaders to render the meshes and shadow maps
-  std::shared_ptr<ShaderProgram> mainShader, shadomMapShader;
-
-  // useful for debug
-  bool saveShadowMapsPpm = false;
+  // shaders to render the meshes
+  std::shared_ptr<ShaderProgram> mainShader;
 
     void render()
   {
@@ -211,7 +200,6 @@ void printHelp()
     "    Keyboard commands:" << std::endl <<
     "    * H: print this help" << std::endl <<
     "    * T: toggle animation" << std::endl <<
-    "    * S: save shadow maps into PPM files" << std::endl <<
     "    * F1: toggle wireframe/surface rendering" << std::endl <<
     "    * ESC: quit the program" << std::endl;
 }
@@ -232,8 +220,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     printHelp();
   } else if(action == GLFW_PRESS && key == GLFW_KEY_L) {
     g_scene.subdivideCenterMesh();
-  } else if(action == GLFW_PRESS && key == GLFW_KEY_S) {
-    g_scene.saveShadowMapsPpm = true;
   } else if(action == GLFW_PRESS && key == GLFW_KEY_T) {
     g_appTimerStoppedP = !g_appTimerStoppedP;
     if(!g_appTimerStoppedP)
@@ -316,7 +302,7 @@ void initGLFW()
   glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
   // Create the window
-  g_window = glfwCreateWindow(g_windowWidth, g_windowHeight, "IGR202 - Practical - Shadow", nullptr, nullptr);
+  g_window = glfwCreateWindow(g_windowWidth, g_windowHeight, "IGR202 - Practical", nullptr, nullptr);
   if(!g_window) {
     std::cerr << "ERROR: Failed to open window" << std::endl;
     glfwTerminate();
@@ -415,16 +401,14 @@ void initScene(const std::string &meshFilename)
     glm::vec3(1.0, 1.0, 0.8),
     glm::vec3(1.0, 1.0, 0.8),
   };
-  unsigned int shadow_map_width=2000, shadow_map_height=2000; // play with these parameters
+  //unsigned int shadow_map_width=2000, shadow_map_height=2000; // play with these parameters
   for(int i=0; i<3; ++i) {
     g_scene.lights.push_back(Light());
     Light &a_light = g_scene.lights[g_scene.lights.size() - 1];
     a_light.position = pos[i];
     a_light.color = col[i];
     a_light.intensity = 0.5f;
-    a_light.shadowMapTexOnGPU = g_availableTextureSlot;
-    glActiveTexture(GL_TEXTURE0 + a_light.shadowMapTexOnGPU);
-    // glBindTexture(GL_TEXTURE_2D, a_light.shadowMap.getTextureId());
+    glActiveTexture(GL_TEXTURE0);
     ++g_availableTextureSlot;
   }
 
