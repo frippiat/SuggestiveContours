@@ -464,6 +464,7 @@ void update(float currentTime)
     // <---- Update here what needs to be animated over time ---->
 
     g_scene.rhinoMat = glm::rotate(glm::mat4(1.f), (float)g_appTimer, glm::vec3(0.f, 1.f, 0.f));
+  
   }
 }
 

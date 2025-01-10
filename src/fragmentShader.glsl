@@ -34,7 +34,7 @@ void main() {
   vec3 v = normalize(camPos - fPosition);
   vec3 n = normalize(fNormal);
   float dotProduct = dot(fNormal, v);
-  if (abs(dotProduct) <0.03 || (u_contourMode==0)) {
+  if (abs(dotProduct) <0.01 || (u_contourMode==0)) {
     vec3 wo = normalize(camPos - fPosition); // unit vector pointing to the camera
 
     vec3 radiance = vec3(0, 0, 0);
