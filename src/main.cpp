@@ -74,6 +74,9 @@ bool g_appTimerStoppedP = true;
 // textures
 unsigned int g_availableTextureSlot = 0;
 
+//contours
+bool g_contourMode= false;
+
 // int g_albedoTexLoaded = 0;
 // GLuint g_albedoTex;
 // unsigned int g_albedoTexOnGPU;
@@ -160,6 +163,8 @@ struct Scene {
 
     // camera
     mainShader->set("camPos", g_cam->getPosition());
+    int intValue = static_cast<int>(g_contourMode);
+    mainShader->set("u_contourMode", intValue);
     mainShader->set("viewMat", g_cam->computeViewMatrix());
     mainShader->set("projMat", g_cam->computeProjectionMatrix());
 
@@ -228,7 +233,9 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     GLint mode[2];
     glGetIntegerv(GL_POLYGON_MODE, mode);
     glPolygonMode(GL_FRONT_AND_BACK, mode[1] == GL_FILL ? GL_LINE : GL_FILL);
-  } else if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
+  } else if (action == GLFW_PRESS && key == GLFW_KEY_F2) {
+    g_contourMode = !g_contourMode;
+} else if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
     glfwSetWindowShouldClose(window, true); // Closes the application if the escape key is pressed
   }
 }
