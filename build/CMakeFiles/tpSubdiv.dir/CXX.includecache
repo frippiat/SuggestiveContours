@@ -3092,20 +3092,6 @@ map
 set
 -
 
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/ShaderProgram.cpp
-ShaderProgram.h
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/ShaderProgram.h
-iostream
--
-fstream
--
-sstream
--
-exception
--
-ios
--
-
 /home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/ShaderProgram.h
 glad/glad.h
 -

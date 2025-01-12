@@ -6,11 +6,13 @@ layout(location=2) in vec2 vTexCoord;
 
 uniform mat4 modelMat, viewMat, projMat;
 uniform mat3 normMat;
+uniform vec3 camPos;
 
 out vec3 fPositionModel;
 out vec3 fPosition;
 out vec3 fNormal;
 out vec2 fTexCoord;
+out float dotProduct;
 
 void main() {
   fPositionModel = vPosition;
@@ -19,4 +21,8 @@ void main() {
   fTexCoord = vTexCoord;
 
   gl_Position =  projMat*viewMat*modelMat*vec4(vPosition, 1.0); // mandatory
+
+  vec3 v = normalize(camPos - fPosition);
+  vec3 n = normalize(fNormal);
+  dotProduct = dot(fNormal, v);
 }
