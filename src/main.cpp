@@ -47,7 +47,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-const std::string DEFAULT_MESH_FILENAME("data/sphere.off");
+const std::string DEFAULT_MESH_FILENAME("data/monkey.off");
 
 // window parameters
 GLFWwindow *g_window = nullptr;
@@ -198,6 +198,11 @@ struct Scene {
     rhino->subdivideLoop();
     rhino->init();
   }
+
+  void calculateCurvatureCenterMesh() {
+    rhino->calculateCurvature();
+    rhino->init();
+  }
 };
 
 Scene g_scene;
@@ -232,6 +237,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
   if(action == GLFW_PRESS && key == GLFW_KEY_H) {
     printHelp();
   } else if(action == GLFW_PRESS && key == GLFW_KEY_L) {
+    g_contourMode=0;
     g_scene.subdivideCenterMesh();
   } else if(action == GLFW_PRESS && key == GLFW_KEY_T) {
     g_appTimerStoppedP = !g_appTimerStoppedP;
@@ -258,6 +264,7 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     else
     {
       g_contourMode=2;
+      g_scene.calculateCurvatureCenterMesh();
     }
 } else if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
     glfwSetWindowShouldClose(window, true); // Closes the application if the escape key is pressed

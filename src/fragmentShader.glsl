@@ -53,7 +53,7 @@ void main() {
   }
   else if(u_contourMode==1) //Draw true contours
   {
-    if(abs(dotProduct)<0.0001)
+    if(abs(dotProduct)<0.001)
     {
       //Reminder: the better the quality of the mesh, the better the quality of the contours
       colorOut = vec4(0.0,0.0,0.0, 1.0);
@@ -63,8 +63,9 @@ void main() {
       colorOut = vec4(0.8,0.8,0.8,1.0);
     }
   } 
-  else
+  else // Display curvature (with the higher the curvature, the blacker the area)
   {
-    colorOut = vec4(fCurvatureKappa2,fCurvatureKappa2,fCurvatureKappa2,1.0);
+    //TOCHANGE later, I am currently using to to display the curvature
+    colorOut = vec4(1-abs(fCurvatureKappa1/0.1),1-abs(fCurvatureKappa1/0.1),1-abs(fCurvatureKappa1/0.1),1.0);
   }
 }

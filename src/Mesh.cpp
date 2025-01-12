@@ -295,6 +295,15 @@ void Mesh::calculateCurvature() {
             }
         }
     }
+    std::cout<<"\n Values in the kappa1 array"<< std::endl;
+    for (size_t i = 0; i < principalCurvatureKappa1.size(); ++i) {
+        std::cout << "Kappa1[" << i << "] = " << principalCurvatureKappa1[i] << std::endl;
+    }
+
+    std::cout<<"\n Values in the kappa2 array"<< std::endl;
+    for (size_t i = 0; i < principalCurvatureKappa2.size(); ++i) {
+        std::cout << "Kappa2[" << i << "] = " << principalCurvatureKappa2[i] << std::endl;
+    }
 }
 
 

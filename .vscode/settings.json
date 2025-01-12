@@ -64,6 +64,7 @@
         "typeinfo": "cpp",
         "valarray": "cpp",
         "variant": "cpp",
-        "dense": "cpp"
+        "dense": "cpp",
+        "*.ipp": "cpp"
     }
 }
