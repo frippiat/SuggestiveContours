@@ -39,7 +39,8 @@ public:
   void initOldGL();
   void render();
   void clear();
-  void calculateCurvature();
+  void calculatePrincipalCurvature();
+  void calculateRadialCurvature(std::vector<glm::vec3> cameraPosition);
 
   void subdivideLoop1()
   {

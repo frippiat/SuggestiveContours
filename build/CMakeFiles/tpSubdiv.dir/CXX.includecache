@@ -2348,50 +2348,6 @@ stdint.h
 KHR/khrplatform.h
 -
 
-../dep/glfw/include/GLFW/glfw3.h
-stddef.h
--
-stdint.h
--
-vulkan/vulkan.h
--
-GLES/gl.h
--
-GLES/glext.h
--
-GLES2/gl2.h
--
-GLES2/gl2ext.h
--
-GLES3/gl3.h
--
-GLES2/gl2ext.h
--
-GLES3/gl31.h
--
-GLES2/gl2ext.h
--
-GLES3/gl32.h
--
-GLES2/gl2ext.h
--
-OpenGL/gl3.h
--
-OpenGL/gl3ext.h
--
-GL/glcorearb.h
--
-OpenGL/glu.h
--
-GL/glu.h
--
-OpenGL/gl.h
--
-GL/gl.h
--
-GL/glext.h
--
-
 ../dep/glm/glm/common.hpp
 detail/qualifier.hpp
 ../dep/glm/glm/detail/qualifier.hpp
@@ -5400,10 +5356,26 @@ detail/setup.hpp
 detail/func_vector_relational.inl
 ../dep/glm/glm/detail/func_vector_relational.inl
 
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Camera.h
-
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Error.h
-glad/glad.h
+/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Mesh.cpp
+Mesh.h
+/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Mesh.h
+cmath
+-
+algorithm
+-
+iostream
+-
+fstream
+-
+exception
+-
+ios
+-
+string
+-
+memory
+-
+sstream
 -
 
 /home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Mesh.h
@@ -5422,95 +5394,5 @@ glm/ext.hpp
 map
 -
 set
--
-
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/ShaderProgram.h
-glad/glad.h
--
-string
--
-memory
--
-glm/glm.hpp
--
-glm/ext.hpp
--
-
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/main.cpp
-glad/glad.h
--
-GLFW/glfw3.h
--
-glm/glm.hpp
--
-glm/ext.hpp
--
-glm/ext/matrix_transform.hpp
--
-glm/gtc/quaternion.hpp
--
-cstdlib
--
-cstdio
--
-iostream
--
-fstream
--
-ios
--
-vector
--
-string
--
-cmath
--
-memory
--
-algorithm
--
-exception
--
-Error.h
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Error.h
-ShaderProgram.h
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/ShaderProgram.h
-Camera.h
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Camera.h
-Mesh.h
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Mesh.h
-stb_image.h
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/stb_image.h
-
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/stb_image.h
-stb_image.h
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/stb_image.h
-stdio.h
--
-stdlib.h
--
-stdarg.h
--
-stddef.h
--
-stdlib.h
--
-string.h
--
-limits.h
--
-math.h
--
-stdio.h
--
-assert.h
--
-stdint.h
--
-emmintrin.h
--
-intrin.h
--
-arm_neon.h
 -
 

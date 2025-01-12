@@ -200,7 +200,7 @@ struct Scene {
   }
 
   void calculateCurvatureCenterMesh() {
-    rhino->calculateCurvature();
+    rhino->calculatePrincipalCurvature();
     rhino->init();
   }
 };
@@ -415,7 +415,7 @@ void initScene(const std::string &meshFilename)
     } catch(std::exception &e) {
       exitOnCriticalError(std::string("[Error loading mesh]") + e.what());
     }
-    g_scene.rhino->calculateCurvature();
+    g_scene.rhino->calculatePrincipalCurvature();
     g_scene.rhino->init();
   }
 

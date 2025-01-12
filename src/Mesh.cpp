@@ -228,7 +228,7 @@ void Mesh::clear()
   }
 }
 
-void Mesh::calculateCurvature() {
+void Mesh::calculatePrincipalCurvature() {
     // Resize storage for curvature results
     principalCurvatureKappa1.resize(_vertexPositions.size(), 0.0f);
     principalCurvatureKappa2.resize(_vertexPositions.size(), 0.0f);
@@ -272,29 +272,53 @@ void Mesh::calculateCurvature() {
 
     // Average curvature tensors and compute eigenvalues/directions
     for (unsigned int v = 0; v < _vertexPositions.size(); ++v) {
-        if (vertexCounts[v] > 0) {
-            curvatureTensors[v] /= vertexCounts[v];
+      if (vertexCounts[v] > 0) {
+          // Average the curvature tensor
+          curvatureTensors[v] /= vertexCounts[v];
 
-            // Eigen decomposition of curvature tensor
-            Eigen::SelfAdjointEigenSolver<Eigen::Matrix2d> solver(curvatureTensors[v]);
-            if (solver.info() == Eigen::Success) {
-                // Eigenvalues are principal curvatures
-                principalCurvatureKappa1[v] = solver.eigenvalues()(0);  // Minimum curvature
-                principalCurvatureKappa2[v] = solver.eigenvalues()(1);  // Maximum curvature
+          // Perform eigen decomposition of the curvature tensor
+          Eigen::SelfAdjointEigenSolver<Eigen::Matrix2d> solver(curvatureTensors[v]);
+          if (solver.info() == Eigen::Success) {
+              // Eigenvalues are the principal curvatures
+              principalCurvatureKappa1[v] = solver.eigenvalues()(0);  // Minimum curvature
+              principalCurvatureKappa2[v] = solver.eigenvalues()(1);  // Maximum curvature
 
-                // Eigenvectors are principal directions
-                Eigen::Vector2d dir1 = solver.eigenvectors().col(0);
-                Eigen::Vector2d dir2 = solver.eigenvectors().col(1);
+              // Eigenvectors are the principal directions in 2D (tangent plane coordinates)
+              Eigen::Vector2d dir1 = solver.eigenvectors().col(0); // First principal direction
+              Eigen::Vector2d dir2 = solver.eigenvectors().col(1); // Second principal direction
 
-                
-                // Map back to 3D (tangent plane basis)
-                //glm::vec3 tangent1 = glm::normalize(dir1[0] * (p1 - p0) + dir1[1] * (p2 - p0));
-                //glm::vec3 tangent2 = glm::normalize(dir2[0] * (p1 - p0) + dir2[1] * (p2 - p0));
-                //principalDirectionK1[v] = tangent1;
-                //principalDirectionK2[v] = tangent2;
-            }
-        }
+              // Compute tangent plane basis vectors from 3D positions of neighbors
+              glm::vec3 tangentU(0.0f), tangentV(0.0f);
+              for (const auto& tri : _triangleIndices) {
+                  if (tri[0] == v || tri[1] == v || tri[2] == v) {
+                      // Find two edges of the triangle that share vertex v
+                      unsigned int v1 = (tri[0] == v) ? tri[1] : tri[0];
+                      unsigned int v2 = (tri[0] == v || tri[1] == v) ? tri[2] : tri[1];
+
+                      glm::vec3 edge1 = _vertexPositions[v1] - _vertexPositions[v];
+                      glm::vec3 edge2 = _vertexPositions[v2] - _vertexPositions[v];
+
+                      // Use these edges to compute a local tangent basis
+                      tangentU += edge1;
+                      tangentV += edge2;
+                  }
+              }
+
+              // Normalize the tangent vectors
+              tangentU = glm::normalize(tangentU);
+              tangentV = glm::normalize(tangentV);
+
+              // Map 2D eigenvectors back to 3D using the tangent basis
+              glm::vec3 principalDir1 = glm::normalize(static_cast<float>(dir1[0]) * tangentU + static_cast<float>(dir1[1]) * tangentV);
+              glm::vec3 principalDir2 = glm::normalize(static_cast<float>(dir2[0]) * tangentU + static_cast<float>(dir2[1]) * tangentV);
+
+              // Store principal directions
+              principalDirectionK1[v] = principalDir1;
+              principalDirectionK2[v] = principalDir2;
+          }
+      }
     }
+
     std::cout<<"\n Values in the kappa1 array"<< std::endl;
     for (size_t i = 0; i < principalCurvatureKappa1.size(); ++i) {
         std::cout << "Kappa1[" << i << "] = " << principalCurvatureKappa1[i] << std::endl;
@@ -304,6 +328,11 @@ void Mesh::calculateCurvature() {
     for (size_t i = 0; i < principalCurvatureKappa2.size(); ++i) {
         std::cout << "Kappa2[" << i << "] = " << principalCurvatureKappa2[i] << std::endl;
     }
+}
+
+void calculateRadialCurvature(std::vector<glm::vec3> cameraPosition)
+{
+      
 }
 
 
