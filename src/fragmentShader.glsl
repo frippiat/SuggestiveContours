@@ -71,7 +71,7 @@ void main() {
   }
   else
   {
-    if(abs(fRadialCurvature)<0.01)
+    if(abs(fRadialCurvature)<0.001)
     {
       //Reminder: the better the quality of the mesh, the better the quality of the contours
       colorOut = vec4(0.0,0.0,0.0, 1.0);
