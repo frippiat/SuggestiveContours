@@ -6,6 +6,9 @@ SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(tpSubdiv)
 
+# Add Eigen to the include path
+include_directories(dep/Eigen/Dense)
+
 #add_definitions(-DSUPPORT_OPENGL_45)
 
 add_executable(

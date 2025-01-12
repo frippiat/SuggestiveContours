@@ -3076,12 +3076,36 @@ detail/func_vector_relational.inl
 glad/glad.h
 -
 
+/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Mesh.cpp
+Mesh.h
+/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Mesh.h
+cmath
+-
+algorithm
+-
+iostream
+-
+fstream
+-
+exception
+-
+ios
+-
+string
+-
+memory
+-
+sstream
+-
+
 /home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/src/Mesh.h
 glad/glad.h
 -
 vector
 -
 memory
+-
+Eigen/Dense
 -
 glm/glm.hpp
 -

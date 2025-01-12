@@ -25,4 +25,15 @@ void main() {
   vec3 v = normalize(camPos - fPosition);
   vec3 n = normalize(fNormal);
   dotProduct = dot(fNormal, v);
+  //OPTION 1: Calculating the dotProduct and letting the fragmentShader define the color of the fragment
+  //OPTION 2: Calculating the dotProduct and only letting the fragmentShader the given value as color. Remove the part below to deactivate option 2
+  float treshold_countour=0.0005;
+  if(dotProduct<0.0005)
+  {
+    dotProduct=0.0;
+  }
+  else
+  {
+    dotProduct=1.0;
+  }
 }

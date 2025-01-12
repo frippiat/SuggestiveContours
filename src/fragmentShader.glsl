@@ -51,13 +51,20 @@ void main() {
   }
   else //contour mode is on
   {
-    if(abs(dotProduct)<0.015)
+    //OPTION 1. Comment the line below to remove option 1
+    colorOut = vec4(dotProduct,dotProduct,dotProduct,1.0);
+
+    //OPTION 2. Comment the lines of the if-else statements below to remove option 2
+    /*
+    if(abs(dotProduct)<0.0001)
     {
+      //Reminder: the better the quality of the mesh, the better the quality of the contours
       colorOut = vec4(0.0,0.0,0.0, 1.0);
     }
     else
     {
-      discard;
+      colorOut = vec4(0.8,0.8,0.8,1.0);
     }
+    */
   }
 }

@@ -6,31 +6,3 @@
 
 #IncludeRegexTransform: 
 
-../dep/glad/include/KHR/khrplatform.h
-stdint.h
--
-inttypes.h
--
-stdint.h
--
-
-../dep/glad/include/glad/glad.h
-KHR/khrplatform.h
--
-
-/home/vincent/Documents/Burgerlijk_Ingenieur_cw/Jaar_5/Telecom/Fundamentals of Computer Graphics/TP_Subdivision/GeomTP/dep/glad/src/glad.c
-stdio.h
--
-stdlib.h
--
-string.h
--
-glad/glad.h
--
-windows.h
--
-winapifamily.h
--
-dlfcn.h
--
-

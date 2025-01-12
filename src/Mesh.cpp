@@ -1,7 +1,6 @@
 #define _USE_MATH_DEFINES
 
 #include "Mesh.h"
-
 #include <cmath>
 #include <algorithm>
 #include <iostream>
@@ -198,6 +197,75 @@ void Mesh::clear()
     _ibo = 0;
   }
 }
+
+void Mesh::calculateCurvature() {
+    // Resize storage for curvature results
+    principalCurvatureKappa1.resize(_vertexPositions.size(), 0.0f);
+    principalCurvatureKappa2.resize(_vertexPositions.size(), 0.0f);
+    principalDirectionK1.resize(_vertexPositions.size(), glm::vec3(0.0f));
+    principalDirectionK2.resize(_vertexPositions.size(), glm::vec3(0.0f));
+
+    // Temporary storage to accumulate curvature tensors
+    std::vector<Eigen::Matrix2d> curvatureTensors(_vertexPositions.size(), Eigen::Matrix2d::Zero());
+    std::vector<int> vertexCounts(_vertexPositions.size(), 0);
+
+    // Iterate over triangles
+    for (const auto& tri : _triangleIndices) {
+        unsigned int i0 = tri[0], i1 = tri[1], i2 = tri[2];
+        glm::vec3 p0 = _vertexPositions[i0], p1 = _vertexPositions[i1], p2 = _vertexPositions[i2];
+        glm::vec3 n0 = _vertexNormals[i0], n1 = _vertexNormals[i1], n2 = _vertexNormals[i2];
+
+        // Compute triangle edges and partial derivatives
+        glm::vec3 e1 = p1 - p0, e2 = p2 - p0;
+        glm::vec3 dn1 = n1 - n0, dn2 = n2 - n0;
+
+        // Compute first fundamental form coefficients
+        double E = glm::dot(e1, e1), F = glm::dot(e1, e2), G = glm::dot(e2, e2);
+
+        // Compute second fundamental form coefficients
+        double L = -glm::dot(dn1, e1), M = -glm::dot(dn1, e2), N = -glm::dot(dn2, e2);
+
+        // Construct Weingarten matrix
+        Eigen::Matrix2d W;
+        W(0, 0) = (L * G - M * F) / (E * G - F * F);
+        W(0, 1) = (M * E - L * F) / (E * G - F * F);
+        W(1, 0) = (M * E - N * F) / (E * G - F * F);
+        W(1, 1) = (N * E - M * F) / (E * G - F * F);
+
+        // Assign curvature tensor to each vertex
+        for (unsigned int v : {i0, i1, i2}) {
+            curvatureTensors[v] += W;
+            vertexCounts[v]++;
+        }
+    }
+
+    // Average curvature tensors and compute eigenvalues/directions
+    for (unsigned int v = 0; v < _vertexPositions.size(); ++v) {
+        if (vertexCounts[v] > 0) {
+            curvatureTensors[v] /= vertexCounts[v];
+
+            // Eigen decomposition of curvature tensor
+            Eigen::SelfAdjointEigenSolver<Eigen::Matrix2d> solver(curvatureTensors[v]);
+            if (solver.info() == Eigen::Success) {
+                // Eigenvalues are principal curvatures
+                principalCurvatureKappa1[v] = solver.eigenvalues()(0);  // Minimum curvature
+                principalCurvatureKappa2[v] = solver.eigenvalues()(1);  // Maximum curvature
+
+                // Eigenvectors are principal directions
+                Eigen::Vector2d dir1 = solver.eigenvectors().col(0);
+                Eigen::Vector2d dir2 = solver.eigenvectors().col(1);
+
+                // Map back to 3D (tangent plane basis)
+                glm::vec3 tangent1 = glm::normalize(dir1[0] * (p1 - p0) + dir1[1] * (p2 - p0));
+                glm::vec3 tangent2 = glm::normalize(dir2[0] * (p1 - p0) + dir2[1] * (p2 - p0));
+                principalDirectionK1[v] = tangent1;
+                principalDirectionK2[v] = tangent2;
+            }
+        }
+    }
+}
+
+
 
 // Loads an OFF mesh file. See https://en.wikipedia.org/wiki/OFF_(file_format)
 void loadOFF(const std::string &filename, std::shared_ptr<Mesh> meshPtr)
