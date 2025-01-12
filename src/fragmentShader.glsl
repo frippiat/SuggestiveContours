@@ -27,6 +27,7 @@ in vec2 fTexCoord;
 in float dotProduct;
 in float fCurvatureKappa1;
 in float fCurvatureKappa2;
+in float fRadialCurvature;
 
 out vec4 colorOut; // shader output: the color response attached to this fragment
 
@@ -63,9 +64,21 @@ void main() {
       colorOut = vec4(0.8,0.8,0.8,1.0);
     }
   } 
-  else // Display curvature (with the higher the curvature, the blacker the area)
+  else if (u_contourMode==2) // Display curvature (with the higher the curvature, the blacker the area)
   {
     //TOCHANGE later, I am currently using to to display the curvature
     colorOut = vec4(1-abs(fCurvatureKappa1/0.1),1-abs(fCurvatureKappa1/0.1),1-abs(fCurvatureKappa1/0.1),1.0);
+  }
+  else
+  {
+    if(abs(fRadialCurvature)<0.01)
+    {
+      //Reminder: the better the quality of the mesh, the better the quality of the contours
+      colorOut = vec4(0.0,0.0,0.0, 1.0);
+    }
+    else
+    {
+      colorOut = vec4(0.8,0.8,0.8,1.0);
+    }
   }
 }

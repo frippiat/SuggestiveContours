@@ -40,7 +40,7 @@ public:
   void render();
   void clear();
   void calculatePrincipalCurvature();
-  void calculateRadialCurvature(std::vector<glm::vec3> cameraPosition);
+  void calculateRadialCurvature(const glm::vec3& cameraPosition);
 
   void subdivideLoop1()
   {
@@ -266,6 +266,7 @@ private:
   std::vector<float> principalCurvatureKappa2;
   std::vector<glm::vec3> principalDirectionK1;
   std::vector<glm::vec3> principalDirectionK2;
+  std::vector<float> radialCurvature;
 
   GLuint _vao = 0;
   GLuint _posVbo = 0;
@@ -274,6 +275,7 @@ private:
   GLuint _ibo = 0;
   GLuint _curvatureKappa1Vbo = 0;
   GLuint _curvatureKappa2Vbo = 0;
+  GLuint _radialCurvatureVbo=0;
 };
 
 // utility: loader

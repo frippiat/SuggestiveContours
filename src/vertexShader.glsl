@@ -5,6 +5,7 @@ layout(location=1) in vec3 vNormal;
 layout(location=2) in vec2 vTexCoord;
 layout(location=3) in float vCurvatureKappa1; // Principal curvature 1
 layout(location=4) in float vCurvatureKappa2; // Principal curvature 2
+layout(location=5) in float vRadialCurvature; // Radial curvature
 
 uniform mat4 modelMat, viewMat, projMat;
 uniform mat3 normMat;
@@ -17,6 +18,7 @@ out vec2 fTexCoord;
 out float dotProduct;
 out float fCurvatureKappa1;
 out float fCurvatureKappa2;
+out float fRadialCurvature;
 
 void main() {
   fPositionModel = vPosition;
@@ -36,4 +38,5 @@ void main() {
   //CURVATURE
   fCurvatureKappa1=vCurvatureKappa1;
   fCurvatureKappa2=vCurvatureKappa2;
+  fRadialCurvature=vRadialCurvature;
 }

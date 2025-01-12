@@ -135,6 +135,10 @@ void Mesh::init()
   glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa2Vbo);
   glBufferData(GL_ARRAY_BUFFER, sizeof(float) * principalCurvatureKappa2.size(), principalCurvatureKappa2.data(), GL_DYNAMIC_READ);
 
+  // Create and populate buffer for radialCurvature (location=5)
+  glGenBuffers(1, &_radialCurvatureVbo);
+  glBindBuffer(GL_ARRAY_BUFFER, _radialCurvatureVbo);
+  glBufferData(GL_ARRAY_BUFFER, radialCurvature.size() * sizeof(float), radialCurvature.data(), GL_DYNAMIC_READ);
 
   // // Generate a GPU buffer to store the index buffer that stores the list of indices of the triangles forming the mesh
   size_t indexBufferSize = sizeof(glm::uvec3)*_triangleIndices.size();
@@ -179,6 +183,10 @@ void Mesh::init()
   glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa2Vbo);
   glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
 
+  glEnableVertexAttribArray(5); // Radial curvature attribute location
+  glBindBuffer(GL_ARRAY_BUFFER, _radialCurvatureVbo);
+  glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ibo);
 
   glBindVertexArray(0); // Desactive the VAO just created. Will be activated at rendering time.
@@ -221,6 +229,10 @@ void Mesh::clear()
   if (_curvatureKappa2Vbo) {
     glDeleteBuffers(1, &_curvatureKappa2Vbo);
     _curvatureKappa2Vbo = 0;
+    }
+  if (_curvatureKappa2Vbo) {
+    glDeleteBuffers(1, &_radialCurvatureVbo);
+    _radialCurvatureVbo= 0;
     }
   if(_ibo) {
     glDeleteBuffers(1, &_ibo);
@@ -319,6 +331,7 @@ void Mesh::calculatePrincipalCurvature() {
       }
     }
 
+    /*
     std::cout<<"\n Values in the kappa1 array"<< std::endl;
     for (size_t i = 0; i < principalCurvatureKappa1.size(); ++i) {
         std::cout << "Kappa1[" << i << "] = " << principalCurvatureKappa1[i] << std::endl;
@@ -328,11 +341,36 @@ void Mesh::calculatePrincipalCurvature() {
     for (size_t i = 0; i < principalCurvatureKappa2.size(); ++i) {
         std::cout << "Kappa2[" << i << "] = " << principalCurvatureKappa2[i] << std::endl;
     }
+    */
 }
 
-void calculateRadialCurvature(std::vector<glm::vec3> cameraPosition)
-{
-      
+void Mesh::calculateRadialCurvature(const glm::vec3& cameraPosition) {
+    calculatePrincipalCurvature();
+    // Resize the storage for radial curvature
+    radialCurvature.resize(_vertexPositions.size(), 0.0f);
+
+    for (unsigned int v = 0; v < _vertexPositions.size(); ++v) {
+        if (principalCurvatureKappa1[v] == 0.0f && principalCurvatureKappa2[v] == 0.0f) {
+            // Skip vertices without valid principal curvatures
+            continue;
+        }
+
+        // Compute the direction vector from the vertex to the camera
+        glm::vec3 w = glm::normalize(cameraPosition - _vertexPositions[v]);
+
+        // Compute the angles between `w` and the principal directions
+        float cosPhi = glm::dot(w, glm::normalize(principalDirectionK1[v]));
+        float sinPhi = glm::sqrt(1.0f - cosPhi * cosPhi); // sin²(φ) + cos²(φ) = 1
+
+        // Compute radial curvature using the Euler formula
+        radialCurvature[v] = principalCurvatureKappa1[v] * cosPhi * cosPhi +
+                             principalCurvatureKappa2[v] * sinPhi * sinPhi;
+    }
+
+    std::cout<<"\n Values in the radial array"<< std::endl;
+    for (size_t i = 0; i < radialCurvature.size(); ++i) {
+        std::cout << "Kappa2[" << i << "] = " << radialCurvature[i] << std::endl;
+    }
 }
 
 

@@ -199,8 +199,13 @@ struct Scene {
     rhino->init();
   }
 
-  void calculateCurvatureCenterMesh() {
+  void calculatePrincipalCurvatureCenterMesh() {
     rhino->calculatePrincipalCurvature();
+    rhino->init();
+  }
+
+  void calculateRadialCurvatureCenterMesh() {
+    rhino->calculateRadialCurvature(g_cam->getPosition());
     rhino->init();
   }
 };
@@ -264,7 +269,17 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     else
     {
       g_contourMode=2;
-      g_scene.calculateCurvatureCenterMesh();
+      g_scene.calculatePrincipalCurvatureCenterMesh();
+    }
+} else if (action == GLFW_PRESS && key == GLFW_KEY_F4) {
+    if(g_contourMode==3)
+    {
+      g_contourMode=0;
+    }
+    else
+    {
+      g_contourMode=3;
+      g_scene.calculateRadialCurvatureCenterMesh();
     }
 } else if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
     glfwSetWindowShouldClose(window, true); // Closes the application if the escape key is pressed
@@ -415,7 +430,6 @@ void initScene(const std::string &meshFilename)
     } catch(std::exception &e) {
       exitOnCriticalError(std::string("[Error loading mesh]") + e.what());
     }
-    g_scene.rhino->calculatePrincipalCurvature();
     g_scene.rhino->init();
   }
 
