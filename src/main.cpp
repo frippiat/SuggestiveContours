@@ -47,7 +47,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-const std::string DEFAULT_MESH_FILENAME("data/monkey.off");
+const std::string DEFAULT_MESH_FILENAME("data/sphere.off");
 
 // window parameters
 GLFWwindow *g_window = nullptr;
@@ -75,7 +75,7 @@ bool g_appTimerStoppedP = true;
 unsigned int g_availableTextureSlot = 0;
 
 //contours
-bool g_contourMode= false;
+int g_contourMode= false;
 
 // int g_albedoTexLoaded = 0;
 // GLuint g_albedoTex;
@@ -163,8 +163,7 @@ struct Scene {
 
     // camera
     mainShader->set("camPos", g_cam->getPosition());
-    int intValue = static_cast<int>(g_contourMode);
-    mainShader->set("u_contourMode", intValue);
+    mainShader->set("u_contourMode", g_contourMode);
     mainShader->set("viewMat", g_cam->computeViewMatrix());
     mainShader->set("projMat", g_cam->computeProjectionMatrix());
 
@@ -243,7 +242,23 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     glGetIntegerv(GL_POLYGON_MODE, mode);
     glPolygonMode(GL_FRONT_AND_BACK, mode[1] == GL_FILL ? GL_LINE : GL_FILL);
   } else if (action == GLFW_PRESS && key == GLFW_KEY_F2) {
-    g_contourMode = !g_contourMode;
+    if(g_contourMode==1)
+    {
+      g_contourMode=0;
+    }
+    else
+    {
+      g_contourMode=1;
+    }
+} else if (action == GLFW_PRESS && key == GLFW_KEY_F3) {
+    if(g_contourMode==2)
+    {
+      g_contourMode=0;
+    }
+    else
+    {
+      g_contourMode=2;
+    }
 } else if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
     glfwSetWindowShouldClose(window, true); // Closes the application if the escape key is pressed
   }
@@ -393,6 +408,7 @@ void initScene(const std::string &meshFilename)
     } catch(std::exception &e) {
       exitOnCriticalError(std::string("[Error loading mesh]") + e.what());
     }
+    g_scene.rhino->calculateCurvature();
     g_scene.rhino->init();
   }
 

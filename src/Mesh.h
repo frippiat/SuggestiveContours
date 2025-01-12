@@ -4,7 +4,7 @@
 #include <glad/glad.h>
 #include <vector>
 #include <memory>
-#include <Eigen/Dense>
+#include <Eigen>
 
 
 #include <glm/glm.hpp>
@@ -271,6 +271,8 @@ private:
   GLuint _normalVbo = 0;
   GLuint _texCoordVbo = 0;
   GLuint _ibo = 0;
+  GLuint _curvatureKappa1Vbo = 0;
+  GLuint _curvatureKappa2Vbo = 0;
 };
 
 // utility: loader

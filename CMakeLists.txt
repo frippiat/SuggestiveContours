@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.0)
 
 SET(CMAKE_EXPORT_COMPILE_COMMANDS 1)
-SET(CMAKE_CXX_STANDARD 11)
+SET(CMAKE_CXX_STANDARD 14)
 SET(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 project(tpSubdiv)
 
 # Add Eigen to the include path
-include_directories(dep/Eigen/Dense)
+include_directories(dep/Eigen)
 
 #add_definitions(-DSUPPORT_OPENGL_45)
 

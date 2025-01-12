@@ -25,6 +25,8 @@ in vec3 fPosition;
 in vec3 fNormal;
 in vec2 fTexCoord;
 in float dotProduct;
+in float fCurvatureKappa1;
+in float fCurvatureKappa2;
 
 out vec4 colorOut; // shader output: the color response attached to this fragment
 
@@ -49,13 +51,8 @@ void main() {
     }
     colorOut = vec4(radiance, 1.0); // build an RGBA value from an RGB one
   }
-  else //contour mode is on
+  else if(u_contourMode==1) //Draw true contours
   {
-    //OPTION 1. Comment the line below to remove option 1
-    colorOut = vec4(dotProduct,dotProduct,dotProduct,1.0);
-
-    //OPTION 2. Comment the lines of the if-else statements below to remove option 2
-    /*
     if(abs(dotProduct)<0.0001)
     {
       //Reminder: the better the quality of the mesh, the better the quality of the contours
@@ -65,6 +62,9 @@ void main() {
     {
       colorOut = vec4(0.8,0.8,0.8,1.0);
     }
-    */
+  } 
+  else
+  {
+    colorOut = vec4(fCurvatureKappa2,fCurvatureKappa2,fCurvatureKappa2,1.0);
   }
 }

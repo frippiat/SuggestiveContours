@@ -3,6 +3,8 @@
 layout(location=0) in vec3 vPosition; // the 1st input attribute is the position (CPU side: glVertexAttrib 0)
 layout(location=1) in vec3 vNormal;
 layout(location=2) in vec2 vTexCoord;
+layout(location=3) in float vCurvatureKappa1; // Principal curvature 1
+layout(location=4) in float vCurvatureKappa2; // Principal curvature 2
 
 uniform mat4 modelMat, viewMat, projMat;
 uniform mat3 normMat;
@@ -13,6 +15,8 @@ out vec3 fPosition;
 out vec3 fNormal;
 out vec2 fTexCoord;
 out float dotProduct;
+out float fCurvatureKappa1;
+out float fCurvatureKappa2;
 
 void main() {
   fPositionModel = vPosition;
@@ -24,16 +28,12 @@ void main() {
 
   vec3 v = normalize(camPos - fPosition);
   vec3 n = normalize(fNormal);
+
+
+  //TRUE CONTOURS
   dotProduct = dot(fNormal, v);
-  //OPTION 1: Calculating the dotProduct and letting the fragmentShader define the color of the fragment
-  //OPTION 2: Calculating the dotProduct and only letting the fragmentShader the given value as color. Remove the part below to deactivate option 2
-  float treshold_countour=0.0005;
-  if(dotProduct<0.0005)
-  {
-    dotProduct=0.0;
-  }
-  else
-  {
-    dotProduct=1.0;
-  }
+
+  //CURVATURE
+  fCurvatureKappa1=vCurvatureKappa1;
+  fCurvatureKappa2=vCurvatureKappa2;
 }

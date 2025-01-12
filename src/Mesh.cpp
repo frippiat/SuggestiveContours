@@ -125,6 +125,17 @@ void Mesh::init()
   glBindBuffer(GL_ARRAY_BUFFER, _texCoordVbo);
   glBufferData(GL_ARRAY_BUFFER, texCoordBufferSize, _vertexTexCoords.data(), GL_DYNAMIC_READ);
 
+  // Create and populate buffer for principalCurvatureKappa1 (location=3)
+  glGenBuffers(1, &_curvatureKappa1Vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa1Vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * principalCurvatureKappa1.size(), principalCurvatureKappa1.data(), GL_DYNAMIC_READ);
+
+  // Create and populate buffer for principalCurvatureKappa2 (location=4)
+  glGenBuffers(1, &_curvatureKappa2Vbo);
+  glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa2Vbo);
+  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * principalCurvatureKappa2.size(), principalCurvatureKappa2.data(), GL_DYNAMIC_READ);
+
+
   // // Generate a GPU buffer to store the index buffer that stores the list of indices of the triangles forming the mesh
   size_t indexBufferSize = sizeof(glm::uvec3)*_triangleIndices.size();
   glGenBuffers(1, &_ibo);
@@ -153,9 +164,20 @@ void Mesh::init()
   glBindBuffer(GL_ARRAY_BUFFER, _normalVbo);
   glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), 0);
 
+  
   glEnableVertexAttribArray(2);
   glBindBuffer(GL_ARRAY_BUFFER, _texCoordVbo);
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2*sizeof(GLfloat), 0);
+
+  // Add attribute for principalCurvatureKappa1 (location=3)
+  glEnableVertexAttribArray(3);
+  glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa1Vbo);
+  glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
+
+  // Add attribute for principalCurvatureKappa2 (location=4)
+  glEnableVertexAttribArray(4);
+  glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa2Vbo);
+  glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
 
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ibo);
 
@@ -192,6 +214,14 @@ void Mesh::clear()
     glDeleteBuffers(1, &_texCoordVbo);
     _texCoordVbo = 0;
   }
+  if (_curvatureKappa1Vbo) {
+    glDeleteBuffers(1, &_curvatureKappa1Vbo);
+    _curvatureKappa1Vbo = 0;
+    }
+  if (_curvatureKappa2Vbo) {
+    glDeleteBuffers(1, &_curvatureKappa2Vbo);
+    _curvatureKappa2Vbo = 0;
+    }
   if(_ibo) {
     glDeleteBuffers(1, &_ibo);
     _ibo = 0;
@@ -209,6 +239,7 @@ void Mesh::calculateCurvature() {
     std::vector<Eigen::Matrix2d> curvatureTensors(_vertexPositions.size(), Eigen::Matrix2d::Zero());
     std::vector<int> vertexCounts(_vertexPositions.size(), 0);
 
+    
     // Iterate over triangles
     for (const auto& tri : _triangleIndices) {
         unsigned int i0 = tri[0], i1 = tri[1], i2 = tri[2];
@@ -255,11 +286,12 @@ void Mesh::calculateCurvature() {
                 Eigen::Vector2d dir1 = solver.eigenvectors().col(0);
                 Eigen::Vector2d dir2 = solver.eigenvectors().col(1);
 
+                
                 // Map back to 3D (tangent plane basis)
-                glm::vec3 tangent1 = glm::normalize(dir1[0] * (p1 - p0) + dir1[1] * (p2 - p0));
-                glm::vec3 tangent2 = glm::normalize(dir2[0] * (p1 - p0) + dir2[1] * (p2 - p0));
-                principalDirectionK1[v] = tangent1;
-                principalDirectionK2[v] = tangent2;
+                //glm::vec3 tangent1 = glm::normalize(dir1[0] * (p1 - p0) + dir1[1] * (p2 - p0));
+                //glm::vec3 tangent2 = glm::normalize(dir2[0] * (p1 - p0) + dir2[1] * (p2 - p0));
+                //principalDirectionK1[v] = tangent1;
+                //principalDirectionK2[v] = tangent2;
             }
         }
     }
