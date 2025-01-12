@@ -174,7 +174,16 @@ struct Scene {
       mainShader->set(std::string("lightSources[")+std::to_string(i)+std::string("].position"), light.position);
       mainShader->set(std::string("lightSources[")+std::to_string(i)+std::string("].color"), light.color);
       mainShader->set(std::string("lightSources[")+std::to_string(i)+std::string("].intensity"), light.intensity);
-      mainShader->set(std::string("lightSources[")+std::to_string(i)+std::string("].isActive"), 1);
+
+      //TOCHANGE BEFORE SUBMITTING: ONLY KEEPING ONE LIGHT FOR SIMPLICITY
+      if(i==0)
+      {
+        mainShader->set(std::string("lightSources[")+std::to_string(i)+std::string("].isActive"), 1);
+      }
+      else
+      {
+        mainShader->set(std::string("lightSources[")+std::to_string(i)+std::string("].isActive"), 0);
+      }
     }
 
     // rhino
@@ -399,7 +408,7 @@ void initScene(const std::string &meshFilename)
 
   // Setup lights
   const glm::vec3 pos[3] = {
-    glm::vec3(0.0, 1.0, 1.0),
+    glm::vec3(100.0, 100.0, 100.0),
     glm::vec3(0.3, 2.0, 0.4),
     glm::vec3(0.2, 0.4, 2.0),
   };

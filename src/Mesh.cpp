@@ -108,24 +108,25 @@ void Mesh::init()
 #else
 void Mesh::init()
 {
+  //MY CODE CHOOSES WITH IF-BRANCH
   // Generate a GPU buffer to store the positions of the vertices
   size_t vertexBufferSize = sizeof(glm::vec3)*_vertexPositions.size();
   glGenBuffers(1, &_posVbo);
   glBindBuffer(GL_ARRAY_BUFFER, _posVbo);
   glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, _vertexPositions.data(), GL_DYNAMIC_READ);
 
-  // Same for normal
+  // Generate a GPU buffer to store the vertex normals of the vertices
   glGenBuffers(1, &_normalVbo);
   glBindBuffer(GL_ARRAY_BUFFER, _normalVbo);
   glBufferData(GL_ARRAY_BUFFER, vertexBufferSize, _vertexNormals.data(), GL_DYNAMIC_READ);
 
-  // Same for texture coordinates
+  // Generate a GPU buffer to store the texture coordinates of the vertices
   size_t texCoordBufferSize = sizeof(glm::vec2)*_vertexTexCoords.size();
   glGenBuffers(1, &_texCoordVbo);
   glBindBuffer(GL_ARRAY_BUFFER, _texCoordVbo);
   glBufferData(GL_ARRAY_BUFFER, texCoordBufferSize, _vertexTexCoords.data(), GL_DYNAMIC_READ);
 
-  // Same for the index buffer that stores the list of indices of the triangles forming the mesh
+  // // Generate a GPU buffer to store the index buffer that stores the list of indices of the triangles forming the mesh
   size_t indexBufferSize = sizeof(glm::uvec3)*_triangleIndices.size();
   glGenBuffers(1, &_ibo);
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ibo);
@@ -135,6 +136,16 @@ void Mesh::init()
   glGenVertexArrays(1, &_vao);
   glBindVertexArray(_vao);
 
+  /*
+  The previous snippet treating _posVbo had the following function:
+  It sets up the storage for the vertex positions on the GPU and populates it with the data from the CPU. 
+  It only prepares the data but does not tell OpenGL how to interpret it for rendering.
+
+  This following snippet treating _posVbo has the following function:
+  It tells OpenGL how to read and interpret the data in the buffer for the enabled vertex attribute:
+    - The attribute at location 0 (likely vertex positions) is associated with _posVbo.
+    - OpenGL now knows that each vertex is represented by 3 floats.
+  */
   glEnableVertexAttribArray(0);
   glBindBuffer(GL_ARRAY_BUFFER, _posVbo);
   glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 3*sizeof(GLfloat), 0);
