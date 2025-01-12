@@ -47,7 +47,7 @@
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-const std::string DEFAULT_MESH_FILENAME("data/monkey.off");
+const std::string DEFAULT_MESH_FILENAME("data/head.off");
 
 // window parameters
 GLFWwindow *g_window = nullptr;
