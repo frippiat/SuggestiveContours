@@ -40,6 +40,7 @@ public:
   void render();
   void clear();
   void calculatePrincipalCurvature();
+  void verify_which_vertex_is_eligible_for_in_a_suggestive_contour();
   void calculateRadialCurvature(const glm::vec3& cameraPosition);
 
   void subdivideLoop1()
@@ -267,6 +268,8 @@ private:
   std::vector<glm::vec3> principalDirectionK1;
   std::vector<glm::vec3> principalDirectionK2;
   std::vector<float> radialCurvature;
+  std::vector<bool> eligible_for_suggestive_contour;
+
 
   GLuint _vao = 0;
   GLuint _posVbo = 0;
@@ -276,6 +279,7 @@ private:
   GLuint _curvatureKappa1Vbo = 0;
   GLuint _curvatureKappa2Vbo = 0;
   GLuint _radialCurvatureVbo=0;
+  GLuint _eligibleForSuggestiveContourVbo = 0;
 };
 
 // utility: loader

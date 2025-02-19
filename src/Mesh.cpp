@@ -140,6 +140,14 @@ void Mesh::init()
   glBindBuffer(GL_ARRAY_BUFFER, _radialCurvatureVbo);
   glBufferData(GL_ARRAY_BUFFER, radialCurvature.size() * sizeof(float), radialCurvature.data(), GL_DYNAMIC_READ);
 
+  std::vector<GLint> eligibleInt(eligible_for_suggestive_contour.size());
+  for (size_t i = 0; i < eligible_for_suggestive_contour.size(); i++) {
+      eligibleInt[i] = eligible_for_suggestive_contour[i] ? 1 : 0;
+  }
+  glGenBuffers(1, &_eligibleForSuggestiveContourVbo);
+  glBindBuffer(GL_ARRAY_BUFFER, _eligibleForSuggestiveContourVbo);
+  glBufferData(GL_ARRAY_BUFFER, eligibleInt.size() * sizeof(GLint), eligibleInt.data(), GL_DYNAMIC_READ);
+
   // // Generate a GPU buffer to store the index buffer that stores the list of indices of the triangles forming the mesh
   size_t indexBufferSize = sizeof(glm::uvec3)*_triangleIndices.size();
   glGenBuffers(1, &_ibo);
@@ -187,6 +195,11 @@ void Mesh::init()
   glBindBuffer(GL_ARRAY_BUFFER, _radialCurvatureVbo);
   glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
 
+  glEnableVertexAttribArray(6);
+  glBindBuffer(GL_ARRAY_BUFFER, _eligibleForSuggestiveContourVbo);
+  // Use the integer version of the attribute pointer.
+  glVertexAttribIPointer(6, 1, GL_INT, sizeof(GLint), 0);
+
   glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, _ibo);
 
   glBindVertexArray(0); // Desactive the VAO just created. Will be activated at rendering time.
@@ -230,10 +243,16 @@ void Mesh::clear()
     glDeleteBuffers(1, &_curvatureKappa2Vbo);
     _curvatureKappa2Vbo = 0;
     }
-  if (_curvatureKappa2Vbo) {
+  if (_radialCurvatureVbo) {
     glDeleteBuffers(1, &_radialCurvatureVbo);
     _radialCurvatureVbo= 0;
     }
+  
+  if (_eligibleForSuggestiveContourVbo) {
+    glDeleteBuffers(1, &_eligibleForSuggestiveContourVbo);
+    _eligibleForSuggestiveContourVbo = 0;
+  }
+
   if(_ibo) {
     glDeleteBuffers(1, &_ibo);
     _ibo = 0;
@@ -344,6 +363,88 @@ void Mesh::calculatePrincipalCurvature() {
     */
 }
 
+// This function approximates the partial derivative (gradient) of the radial curvature at each vertex
+// and marks a vertex as eligible for a suggestive contour if the (average) difference per unit length
+// exceeds a small threshold.
+// 
+// Theory & Sources:
+// The radial curvature R is a view–dependent scalar field defined at each vertex. To decide if a vertex
+// should be highlighted for suggestive contours, we examine the change of R on the surface. A common
+// approach in discrete differential geometry is to approximate the gradient (or directional derivative)
+// of a scalar function at a vertex by taking finite differences with its neighboring vertices.
+// One typical formula is:
+// 
+//    |∇R(v)| ≈ (1/|N(v)|) Σ₍ᵤ∈N(v)₎ |R(u) − R(v)| / ||p(u) − p(v)||
+// 
+// where N(v) is the set of vertices adjacent to vertex v and p(u) is the position of vertex u.
+// This approach is inspired by work such as Meyer et al., "Discrete Differential-Geometry Operators for
+// Triangulated 2-Manifolds" (2003). In our implementation, if the computed average gradient is above a
+// (tiny) threshold (here 1e-6), we mark the vertex as eligible.
+
+void Mesh::verify_which_vertex_is_eligible_for_in_a_suggestive_contour() {
+  // Resize the vector to hold one flag per vertex.
+  eligible_for_suggestive_contour.resize(_vertexPositions.size(), false);
+
+  // STEP 1: Build vertex connectivity.
+  // For each vertex, gather the indices of its neighboring vertices (those sharing an edge).
+  std::vector<std::set<unsigned int>> vertexNeighbors(_vertexPositions.size());
+  for (const auto &tri : _triangleIndices) {
+      vertexNeighbors[tri[0]].insert(tri[1]);
+      vertexNeighbors[tri[0]].insert(tri[2]);
+      vertexNeighbors[tri[1]].insert(tri[0]);
+      vertexNeighbors[tri[1]].insert(tri[2]);
+      vertexNeighbors[tri[2]].insert(tri[0]);
+      vertexNeighbors[tri[2]].insert(tri[1]);
+  }
+
+  // STEP 2: Smooth the radial curvature field.
+  // The idea is to reduce noise by averaging the curvature values from neighboring vertices.
+  // We use inverse–distance weighting here.
+  std::vector<float> smoothedRadial(radialCurvature.size(), 0.0f);
+  for (unsigned int i = 0; i < _vertexPositions.size(); i++) {
+      float sum = 0.0f;
+      float weightSum = 0.0f;
+      for (unsigned int nb : vertexNeighbors[i]) {
+          float dist = glm::length(_vertexPositions[i] - _vertexPositions[nb]);
+          // Avoid division by zero and assign higher weight to closer neighbors.
+          float weight = 1.0f / (dist + 1e-6f);
+          sum += weight * radialCurvature[nb];
+          weightSum += weight;
+      }
+      // If no neighbors, fall back to the original value.
+      smoothedRadial[i] = (weightSum > 0.0f) ? (sum / weightSum) : radialCurvature[i];
+  }
+
+  // STEP 3: Compute a weighted finite–difference approximation of the derivative.
+  // For each vertex, approximate the directional derivative by comparing the smoothed
+  // curvature at the vertex with that at its neighbors.
+  // We use inverse–distance weighting again for stability.
+  const float threshold = 1e-3f; // You may need to adjust this value.
+  for (unsigned int i = 0; i < _vertexPositions.size(); i++) {
+      float grad = 0.0f;
+      float weightSum = 0.0f;
+      for (unsigned int nb : vertexNeighbors[i]) {
+          float dist = glm::length(_vertexPositions[i] - _vertexPositions[nb]);
+          if (dist > 0.0f) {
+              float weight = 1.0f / (dist + 1e-6f);
+              // Compute the (signed) difference in smoothed curvature per unit length.
+              grad += weight * ((smoothedRadial[nb] - smoothedRadial[i]) / dist);
+              weightSum += weight;
+          }
+      }
+      if (weightSum > 0.0f)
+          grad /= weightSum;
+      
+      // STEP 4: Mark vertex eligible if the absolute derivative exceeds a threshold.
+      // (You could also choose to use grad directly if you want to distinguish increasing vs. decreasing.)
+      eligible_for_suggestive_contour[i] = (grad > threshold);
+      
+      // For debugging: you might print out grad for some vertices.
+      // std::cout << "Vertex " << i << " grad: " << grad << std::endl;
+  }
+}
+
+
 void Mesh::calculateRadialCurvature(const glm::vec3& cameraPosition) {
     // Resize the storage for radial curvature
     radialCurvature.resize(_vertexPositions.size(), 0.0f);
@@ -366,10 +467,14 @@ void Mesh::calculateRadialCurvature(const glm::vec3& cameraPosition) {
                              principalCurvatureKappa2[v] * sinPhi * sinPhi;
     }
 
-    std::cout<<"\n Values in the radial array"<< std::endl;
+    verify_which_vertex_is_eligible_for_in_a_suggestive_contour();
+
+    /*
+  std::cout<<"\n Values in the radial array"<< std::endl;
     for (size_t i = 0; i < radialCurvature.size(); ++i) {
         std::cout << "Kappa2[" << i << "] = " << radialCurvature[i] << std::endl;
     }
+  */
 }
 
 

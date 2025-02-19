@@ -6,6 +6,7 @@ layout(location=2) in vec2 vTexCoord;
 layout(location=3) in float vCurvatureKappa1; // Principal curvature 1
 layout(location=4) in float vCurvatureKappa2; // Principal curvature 2
 layout(location=5) in float vRadialCurvature; // Radial curvature
+layout(location=6) in int vEligibleForSuggestiveContour;
 
 uniform mat4 modelMat, viewMat, projMat;
 uniform mat3 normMat;
@@ -39,4 +40,6 @@ void main() {
   fCurvatureKappa1=vCurvatureKappa1;
   fCurvatureKappa2=vCurvatureKappa2;
   fRadialCurvature=vRadialCurvature;
+  if(vEligibleForSuggestiveContour==0)
+  {fRadialCurvature=100;}  
 }
