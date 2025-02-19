@@ -40,7 +40,17 @@ public:
   void render();
   void clear();
   void calculatePrincipalCurvature();
- void verify_which_vertex_is_eligible_for_in_a_suggestive_contour(const glm::vec3 &cameraPosition);
+  void computeTriangleGradientAccumulators(std::vector<glm::vec3> &gradAccum,
+                                             std::vector<float> &weightAccum) const;
+  std::vector<std::set<unsigned int>> computeOneRingNeighbors() const;
+  std::vector<float> computeDirectionalDerivatives(const std::vector<glm::vec3>& gradAccum,
+                                                   const std::vector<float>& weightAccum,
+                                                   const glm::vec3 &cameraPosition) const;
+  std::vector<int> applyThresholdsAndHysteresis(const std::vector<float> &dirDeriv,
+                                                      const std::vector<std::set<unsigned int>> &neighbors,
+                                                      float t_high, float t_low, float theta_c,
+                                                      const glm::vec3 &cameraPosition) const; 
+  void verify_which_vertex_is_eligible_for_in_a_suggestive_contour(const glm::vec3 &cameraPosition);
   void calculateRadialCurvature(const glm::vec3& cameraPosition);
 
   void subdivideLoop1()

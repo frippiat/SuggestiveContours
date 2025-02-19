@@ -363,6 +363,134 @@ void Mesh::calculatePrincipalCurvature() {
     */
 }
 
+std::vector<std::set<unsigned int>> Mesh::computeOneRingNeighbors() const {
+  std::vector<std::set<unsigned int>> neighbors(_vertexPositions.size());
+  for (const auto &tri : _triangleIndices) {
+      neighbors[tri[0]].insert(tri[1]);
+      neighbors[tri[0]].insert(tri[2]);
+      neighbors[tri[1]].insert(tri[0]);
+      neighbors[tri[1]].insert(tri[2]);
+      neighbors[tri[2]].insert(tri[0]);
+      neighbors[tri[2]].insert(tri[1]);
+  }
+  return neighbors;
+}
+
+void Mesh::computeTriangleGradientAccumulators(std::vector<glm::vec3> &gradAccum,
+                                                 std::vector<float> &weightAccum) const {
+  // Initialize accumulators for each vertex.
+  gradAccum.resize(_vertexPositions.size(), glm::vec3(0.0f));
+  weightAccum.resize(_vertexPositions.size(), 0.0f);
+
+  // Loop over triangles.
+  for (const auto &tri : _triangleIndices) {
+      unsigned int i = tri[0], j = tri[1], k = tri[2];
+      const glm::vec3 &p_i = _vertexPositions[i];
+      const glm::vec3 &p_j = _vertexPositions[j];
+      const glm::vec3 &p_k = _vertexPositions[k];
+
+      glm::vec3 e1 = p_j - p_i;
+      glm::vec3 e2 = p_k - p_i;
+      glm::vec3 n = glm::normalize(glm::cross(e1, e2));
+      float area2 = glm::length(glm::cross(e1, e2));
+      if (area2 < 1e-8f)
+          continue; // Skip degenerate triangles.
+
+      // Barycentric gradients.
+      glm::vec3 gradLambda_i = glm::cross(n, p_k - p_j) / area2;
+      glm::vec3 gradLambda_j = glm::cross(n, p_i - p_k) / area2;
+      glm::vec3 gradLambda_k = glm::cross(n, p_j - p_i) / area2;
+
+      // Radial curvature at vertices (assumed computed already).
+      float r_i = radialCurvature[i];
+      float r_j = radialCurvature[j];
+      float r_k = radialCurvature[k];
+
+      // Triangle’s gradient of radial curvature.
+      glm::vec3 G = r_i * gradLambda_i + r_j * gradLambda_j + r_k * gradLambda_k;
+
+      // Compute interior angles.
+      float angle_i = acos(glm::clamp(glm::dot(glm::normalize(p_j - p_i),
+                                                 glm::normalize(p_k - p_i)), -1.0f, 1.0f));
+      float angle_j = acos(glm::clamp(glm::dot(glm::normalize(p_i - p_j),
+                                                 glm::normalize(p_k - p_j)), -1.0f, 1.0f));
+      float angle_k = acos(glm::clamp(glm::dot(glm::normalize(p_i - p_k),
+                                                 glm::normalize(p_j - p_k)), -1.0f, 1.0f));
+
+      // Accumulate weighted contributions.
+      gradAccum[i] += angle_i * G;
+      weightAccum[i] += angle_i;
+      
+      gradAccum[j] += angle_j * G;
+      weightAccum[j] += angle_j;
+      
+      gradAccum[k] += angle_k * G;
+      weightAccum[k] += angle_k;
+  }
+}
+
+
+std::vector<float> Mesh::computeDirectionalDerivatives(const std::vector<glm::vec3>& gradAccum,
+                                                         const std::vector<float>& weightAccum,
+                                                         const glm::vec3 &cameraPosition) const {
+  std::vector<float> dirDeriv(_vertexPositions.size(), 0.0f);
+  for (unsigned int v = 0; v < _vertexPositions.size(); v++) {
+      glm::vec3 grad = (weightAccum[v] > 0.0f) ? (gradAccum[v] / weightAccum[v]) : glm::vec3(0.0f);
+      
+      glm::vec3 viewVec = glm::normalize(cameraPosition - _vertexPositions[v]);
+      glm::vec3 normal = glm::normalize(_vertexNormals[v]);
+      // Project viewVec onto the tangent plane to get w.
+      glm::vec3 w = glm::normalize(viewVec - glm::dot(viewVec, normal) * normal);
+      
+      // Compute directional derivative along w.
+      dirDeriv[v] = glm::dot(grad, w);
+  }
+  return dirDeriv;
+}
+
+
+std::vector<int> Mesh::applyThresholdsAndHysteresis(const std::vector<float> &dirDeriv,
+                                                      const std::vector<std::set<unsigned int>> &neighbors,
+                                                      float t_high, float t_low, float theta_c,
+                                                      const glm::vec3 &cameraPosition) const {
+  std::vector<int> eligibility(_vertexPositions.size(), 0);
+  
+  // First, assign initial eligibility based on derivative and view conditions.
+  for (unsigned int v = 0; v < _vertexPositions.size(); v++) {
+      glm::vec3 viewVec = glm::normalize(cameraPosition - _vertexPositions[v]);
+      glm::vec3 normal = glm::normalize(_vertexNormals[v]);
+      bool viewCondition = (glm::dot(normal, viewVec) < cos(theta_c));
+      if (!viewCondition)
+          eligibility[v] = 0;
+      else if (dirDeriv[v] >= t_high)
+          eligibility[v] = 2; // strong
+      else if (dirDeriv[v] >= t_low)
+          eligibility[v] = 1; // weak
+      else
+          eligibility[v] = 0;
+  }
+  
+  // Hysteresis filtering: Upgrade weak vertices adjacent to strong ones.
+  bool changed = true;
+  while (changed) {
+      changed = false;
+      for (unsigned int v = 0; v < _vertexPositions.size(); v++) {
+          if (eligibility[v] == 1) { // weak vertex
+              for (unsigned int nb : neighbors[v]) {
+                  if (eligibility[nb] == 2) {
+                      eligibility[v] = 2;
+                      changed = true;
+                      break;
+                  }
+              }
+          }
+      }
+  }
+  
+  return eligibility;
+}
+
+
 // This function approximates the partial derivative (gradient) of the radial curvature at each vertex
 // and marks a vertex as eligible for a suggestive contour if the (average) difference per unit length
 // exceeds a small threshold.
@@ -394,129 +522,32 @@ void Mesh::calculatePrincipalCurvature() {
 // filtering to mark vertices as eligible for suggestive contours.
 // 'cameraPosition' is needed to compute view–dependent terms.
 void Mesh::verify_which_vertex_is_eligible_for_in_a_suggestive_contour(const glm::vec3 &cameraPosition) {
-    // Define thresholds (adjust these values as needed)
-    const float t_high = 0.005f;     // Strong derivative threshold
-    const float t_low  = 0.002f;     // Weak derivative threshold
-    const float theta_c = glm::radians(20.0f); // Minimum view angle (in radians)
+    // Define thresholds (adjust as needed)
+    const float t_high = 0.005f;            // Strong derivative threshold
+    const float t_low  = 0.002f;            // Weak derivative threshold
+    const float theta_c = glm::radians(20.0f); // Minimum view angle in radians
 
-    // Ensure our per–vertex eligibility vector is sized appropriately.
+    // Step 1: Compute triangle–wise gradient accumulators.
+    std::vector<glm::vec3> gradAccum;
+    std::vector<float> weightAccum;
+    computeTriangleGradientAccumulators(gradAccum, weightAccum);
+
+    // Step 2: Build one–ring neighbor connectivity.
+    std::vector<std::set<unsigned int>> neighbors = computeOneRingNeighbors();
+
+    // Step 3: Compute per–vertex directional derivatives.
+    std::vector<float> dirDeriv = computeDirectionalDerivatives(gradAccum, weightAccum, cameraPosition);
+
+    // Step 4: Apply thresholds and hysteresis filtering using the helper function.
+    std::vector<int> eligibility = applyThresholdsAndHysteresis(dirDeriv, neighbors, t_high, t_low, theta_c, cameraPosition);
+    
+    // Final: Mark vertex eligible only if classified as strong (i.e., eligibility == 2).
     eligible_for_suggestive_contour.resize(_vertexPositions.size(), false);
-
-    // Prepare accumulators for gradient and corresponding weights per vertex.
-    std::vector<glm::vec3> gradAccum(_vertexPositions.size(), glm::vec3(0.0f));
-    std::vector<float> weightAccum(_vertexPositions.size(), 0.0f);
-
-    // Loop over all triangles to accumulate weighted gradients.
-    for (const auto &tri : _triangleIndices) {
-        unsigned int i = tri[0], j = tri[1], k = tri[2];
-        const glm::vec3 &p_i = _vertexPositions[i];
-        const glm::vec3 &p_j = _vertexPositions[j];
-        const glm::vec3 &p_k = _vertexPositions[k];
-
-        // Compute triangle edges and normal.
-        glm::vec3 e1 = p_j - p_i;
-        glm::vec3 e2 = p_k - p_i;
-        glm::vec3 n = glm::normalize(glm::cross(e1, e2));
-        float area2 = glm::length(glm::cross(e1, e2));
-        if (area2 < 1e-8f)
-            continue; // Skip degenerate triangles.
-        
-        // Barycentric gradients for the triangle.
-        glm::vec3 gradLambda_i = glm::cross(n, p_k - p_j) / area2;
-        glm::vec3 gradLambda_j = glm::cross(n, p_i - p_k) / area2;
-        glm::vec3 gradLambda_k = glm::cross(n, p_j - p_i) / area2;
-        
-        // Retrieve radial curvature at vertices.
-        float r_i = radialCurvature[i];
-        float r_j = radialCurvature[j];
-        float r_k = radialCurvature[k];
-        
-        // Compute the triangle’s constant gradient of radial curvature.
-        glm::vec3 G = r_i * gradLambda_i + r_j * gradLambda_j + r_k * gradLambda_k;
-        
-        // Compute interior angles at each vertex (using the dot product and acos).
-        float angle_i = acos(glm::clamp(glm::dot(glm::normalize(p_j - p_i), glm::normalize(p_k - p_i)), -1.0f, 1.0f));
-        float angle_j = acos(glm::clamp(glm::dot(glm::normalize(p_i - p_j), glm::normalize(p_k - p_j)), -1.0f, 1.0f));
-        float angle_k = acos(glm::clamp(glm::dot(glm::normalize(p_i - p_k), glm::normalize(p_j - p_k)), -1.0f, 1.0f));
-        
-        // Accumulate contributions weighted by the corresponding interior angles.
-        gradAccum[i] += angle_i * G;
-        weightAccum[i] += angle_i;
-        
-        gradAccum[j] += angle_j * G;
-        weightAccum[j] += angle_j;
-        
-        gradAccum[k] += angle_k * G;
-        weightAccum[k] += angle_k;
-    }
-
-    // Compute one-ring connectivity for hysteresis filtering.
-    std::vector<std::set<unsigned int>> vertexNeighbors(_vertexPositions.size());
-    for (const auto &tri : _triangleIndices) {
-        vertexNeighbors[tri[0]].insert(tri[1]);
-        vertexNeighbors[tri[0]].insert(tri[2]);
-        vertexNeighbors[tri[1]].insert(tri[0]);
-        vertexNeighbors[tri[1]].insert(tri[2]);
-        vertexNeighbors[tri[2]].insert(tri[0]);
-        vertexNeighbors[tri[2]].insert(tri[1]);
-    }
-    
-    // For each vertex, compute the directional derivative of radial curvature along w.
-    // Also determine initial eligibility (0 = not eligible, 1 = weak, 2 = strong).
-    std::vector<int> eligibility(_vertexPositions.size(), 0);
-    std::vector<float> dirDeriv(_vertexPositions.size(), 0.0f);
-    
-    for (unsigned int v = 0; v < _vertexPositions.size(); v++) {
-        glm::vec3 grad = (weightAccum[v] > 0.0f) ? (gradAccum[v] / weightAccum[v]) : glm::vec3(0.0f);
-        
-        // Compute the view vector and the projected view vector w.
-        glm::vec3 viewVec = glm::normalize(cameraPosition - _vertexPositions[v]);
-        glm::vec3 normal = glm::normalize(_vertexNormals[v]);
-        glm::vec3 w = glm::normalize(viewVec - glm::dot(viewVec, normal) * normal);
-        
-        // The directional derivative along w.
-        float derivative = glm::dot(grad, w);
-        dirDeriv[v] = derivative;
-        
-        // Enforce the view–dependent threshold.
-        // We require that the angle between normal and viewVec is > theta_c,
-        // i.e. n·viewVec < cos(theta_c).
-        bool viewCondition = (glm::dot(normal, viewVec) < cos(theta_c));
-        
-        if (viewCondition) {
-            if (derivative >= t_high)
-                eligibility[v] = 2; // strong
-            else if (derivative >= t_low)
-                eligibility[v] = 1; // weak
-            else
-                eligibility[v] = 0;
-        } else {
-            eligibility[v] = 0;
-        }
-    }
-    
-    // Hysteresis filtering: Upgrade weak vertices if they are adjacent to strong ones.
-    bool changed = true;
-    while (changed) {
-        changed = false;
-        for (unsigned int v = 0; v < _vertexPositions.size(); v++) {
-            if (eligibility[v] == 1) { // weak vertex
-                for (unsigned int nb : vertexNeighbors[v]) {
-                    if (eligibility[nb] == 2) {
-                        eligibility[v] = 2; // Upgrade to strong
-                        changed = true;
-                        break;
-                    }
-                }
-            }
-        }
-    }
-    
-    // Final: Mark vertex eligible only if it is strong.
     for (unsigned int v = 0; v < _vertexPositions.size(); v++) {
         eligible_for_suggestive_contour[v] = (eligibility[v] == 2);
     }
 }
+
 
 
 
