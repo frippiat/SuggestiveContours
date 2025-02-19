@@ -40,7 +40,7 @@ public:
   void render();
   void clear();
   void calculatePrincipalCurvature();
-  void verify_which_vertex_is_eligible_for_in_a_suggestive_contour();
+ void verify_which_vertex_is_eligible_for_in_a_suggestive_contour(const glm::vec3 &cameraPosition);
   void calculateRadialCurvature(const glm::vec3& cameraPosition);
 
   void subdivideLoop1()
