@@ -71,6 +71,11 @@ float g_appTimer = 0.0;
 float g_appTimerLastColckTime;
 bool g_appTimerStoppedP = true;
 
+// NEW: globals for the second rotation (around X)
+float g_appTimer2 = 0.0;
+float g_appTimerLastColckTime2;
+bool g_appTimer2StoppedP = true;
+
 // textures
 unsigned int g_availableTextureSlot = 0;
 
@@ -196,6 +201,7 @@ struct Scene {
   }
   void subdivideCenterMesh() {
     rhino->subdivideLoop();
+    rhino->calculatePrincipalCurvature();
     rhino->init();
   }
 
@@ -248,6 +254,10 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     g_appTimerStoppedP = !g_appTimerStoppedP;
     if(!g_appTimerStoppedP)
       g_appTimerLastColckTime = static_cast<float>(glfwGetTime());
+  } else if(action == GLFW_PRESS && key == GLFW_KEY_Y) {
+    g_appTimer2StoppedP = !g_appTimer2StoppedP;
+    if(!g_appTimer2StoppedP)
+      g_appTimerLastColckTime2 = static_cast<float>(glfwGetTime());
   } else if(action == GLFW_PRESS && key == GLFW_KEY_F1) {
     GLint mode[2];
     glGetIntegerv(GL_POLYGON_MODE, mode);
@@ -430,6 +440,7 @@ void initScene(const std::string &meshFilename)
     } catch(std::exception &e) {
       exitOnCriticalError(std::string("[Error loading mesh]") + e.what());
     }
+    g_scene.rhino->calculatePrincipalCurvature();
     g_scene.rhino->init();
   }
 
@@ -502,17 +513,32 @@ void render()
 // Update any accessible variable based on the current time
 void update(float currentTime)
 {
+  // Update first timer (rotation about Y)
   if(!g_appTimerStoppedP) {
-    // Animate any entity of the program here
     float dt = currentTime - g_appTimerLastColckTime;
     g_appTimerLastColckTime = currentTime;
     g_appTimer += dt;
-    // <---- Update here what needs to be animated over time ---->
-
-    g_scene.rhinoMat = glm::rotate(glm::mat4(1.f), (float)g_appTimer, glm::vec3(0.f, 1.f, 0.f));
-  
   }
+
+  // Update second timer (rotation about X)
+  if(!g_appTimer2StoppedP) {
+    float dt2 = currentTime - g_appTimerLastColckTime2;
+    g_appTimerLastColckTime2 = currentTime;
+    g_appTimer2 += dt2;
+  }
+
+  // Compute the rotations:
+  glm::mat4 rotY = glm::rotate(glm::mat4(1.f), g_appTimer, glm::vec3(0.f, 1.f, 0.f)); // Y-axis rotation
+  glm::mat4 rotX = glm::rotate(glm::mat4(1.f), g_appTimer2, glm::vec3(1.f, 0.f, 0.f)); // X-axis rotation
+
+  // Combine the rotations (order matters—here Y is applied first, then X)
+  g_scene.rhinoMat = rotY * rotX;
+
+  if (!g_appTimerStoppedP || !g_appTimer2StoppedP) {
+        g_scene.calculateRadialCurvatureCenterMesh();
+    }
 }
+
 
 void usage(const char *command)
 {

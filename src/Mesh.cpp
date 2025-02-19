@@ -345,7 +345,6 @@ void Mesh::calculatePrincipalCurvature() {
 }
 
 void Mesh::calculateRadialCurvature(const glm::vec3& cameraPosition) {
-    calculatePrincipalCurvature();
     // Resize the storage for radial curvature
     radialCurvature.resize(_vertexPositions.size(), 0.0f);
 

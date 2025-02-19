@@ -54,7 +54,7 @@ void main() {
   }
   else if(u_contourMode==1) //Draw true contours
   {
-    if(abs(dotProduct)<0.001)
+    if(abs(dotProduct)<0.002)
     {
       //Reminder: the better the quality of the mesh, the better the quality of the contours
       colorOut = vec4(0.0,0.0,0.0, 1.0);
@@ -71,7 +71,7 @@ void main() {
   }
   else
   {
-    if(abs(fRadialCurvature)<0.001)
+    if(abs(fRadialCurvature)<0.002)
     {
       //Reminder: the better the quality of the mesh, the better the quality of the contours
       colorOut = vec4(0.0,0.0,0.0, 1.0);
