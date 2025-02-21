@@ -125,16 +125,6 @@ void Mesh::init()
   glBindBuffer(GL_ARRAY_BUFFER, _texCoordVbo);
   glBufferData(GL_ARRAY_BUFFER, texCoordBufferSize, _vertexTexCoords.data(), GL_DYNAMIC_READ);
 
-  // Create and populate buffer for principalCurvatureKappa1 (location=3)
-  glGenBuffers(1, &_curvatureKappa1Vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa1Vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * principalCurvatureKappa1.size(), principalCurvatureKappa1.data(), GL_DYNAMIC_READ);
-
-  // Create and populate buffer for principalCurvatureKappa2 (location=4)
-  glGenBuffers(1, &_curvatureKappa2Vbo);
-  glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa2Vbo);
-  glBufferData(GL_ARRAY_BUFFER, sizeof(float) * principalCurvatureKappa2.size(), principalCurvatureKappa2.data(), GL_DYNAMIC_READ);
-
   // Create and populate buffer for radialCurvature (location=5)
   glGenBuffers(1, &_radialCurvatureVbo);
   glBindBuffer(GL_ARRAY_BUFFER, _radialCurvatureVbo);
@@ -181,16 +171,6 @@ void Mesh::init()
   glBindBuffer(GL_ARRAY_BUFFER, _texCoordVbo);
   glVertexAttribPointer(2, 2, GL_FLOAT, GL_FALSE, 2*sizeof(GLfloat), 0);
 
-  // Add attribute for principalCurvatureKappa1 (location=3)
-  glEnableVertexAttribArray(3);
-  glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa1Vbo);
-  glVertexAttribPointer(3, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
-
-  // Add attribute for principalCurvatureKappa2 (location=4)
-  glEnableVertexAttribArray(4);
-  glBindBuffer(GL_ARRAY_BUFFER, _curvatureKappa2Vbo);
-  glVertexAttribPointer(4, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
-
   glEnableVertexAttribArray(5); // Radial curvature attribute location
   glBindBuffer(GL_ARRAY_BUFFER, _radialCurvatureVbo);
   glVertexAttribPointer(5, 1, GL_FLOAT, GL_FALSE, sizeof(float), 0);
@@ -235,14 +215,6 @@ void Mesh::clear()
     glDeleteBuffers(1, &_texCoordVbo);
     _texCoordVbo = 0;
   }
-  if (_curvatureKappa1Vbo) {
-    glDeleteBuffers(1, &_curvatureKappa1Vbo);
-    _curvatureKappa1Vbo = 0;
-    }
-  if (_curvatureKappa2Vbo) {
-    glDeleteBuffers(1, &_curvatureKappa2Vbo);
-    _curvatureKappa2Vbo = 0;
-    }
   if (_radialCurvatureVbo) {
     glDeleteBuffers(1, &_radialCurvatureVbo);
     _radialCurvatureVbo= 0;
@@ -439,6 +411,7 @@ std::vector<float> Mesh::computeDirectionalDerivatives(const std::vector<glm::ve
       
       glm::vec3 viewVec = glm::normalize(cameraPosition - _vertexPositions[v]);
       glm::vec3 normal = glm::normalize(_vertexNormals[v]);
+
       // Project viewVec onto the tangent plane to get w.
       glm::vec3 w = glm::normalize(viewVec - glm::dot(viewVec, normal) * normal);
       

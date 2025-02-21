@@ -12,7 +12,6 @@ uniform LightSource lightSources[3];
 
 struct Material {
   vec3 albedo;
-  // TODO: textures
 };
 
 uniform Material material;
@@ -25,13 +24,12 @@ in vec3 fPosition;
 in vec3 fNormal;
 in vec2 fTexCoord;
 in float dotProduct;
-in float fCurvatureKappa1;
-in float fCurvatureKappa2;
 in float fRadialCurvature;
 
 out vec4 colorOut; // shader output: the color response attached to this fragment
 
 float pi = 3.1415927;
+
 
 void main() {
   if(u_contourMode==0)
@@ -52,33 +50,19 @@ void main() {
     }
     colorOut = vec4(radiance, 1.0); // build an RGBA value from an RGB one
   }
-  else if(u_contourMode==1) //Draw true contours
-  {
-    if(abs(dotProduct)<0.002)
-    {
-      //Reminder: the better the quality of the mesh, the better the quality of the contours
-      colorOut = vec4(0.0,0.0,0.0, 1.0);
-    }
-    else
-    {
-      colorOut = vec4(0.8,0.8,0.8,1.0);
-    }
-  } 
-  else if (u_contourMode==2) // Display curvature (with the higher the curvature, the blacker the area)
-  {
-    //TOCHANGE later, I am currently using to to display the curvature
-    colorOut = vec4(1-abs(fCurvatureKappa1/0.1),1-abs(fCurvatureKappa1/0.1),1-abs(fCurvatureKappa1/0.1),1.0);
-  }
   else
   {
-    if(abs(fRadialCurvature)<0.003)
+    colorOut = vec4(0.8,0.8,0.8,1.0); 
+    if ((abs(dotProduct)<0.001) && (u_contourMode==1))
     {
       //Reminder: the better the quality of the mesh, the better the quality of the contours
-      colorOut = vec4(0.0,0.0,0.0, 1.0);
+      colorOut = vec4(0.1,0.1,0.6, 1.0);
     }
-    else
+
+    if  ((abs(fRadialCurvature)<0.003) && (u_contourMode==2))
     {
-      colorOut = vec4(0.8,0.8,0.8,1.0);
+      //Reminder: the better the quality of the mesh, the better the quality of the contours
+      colorOut = vec4(0.6,0.1,0.1, 1.0);
     }
-  }
+  } 
 }

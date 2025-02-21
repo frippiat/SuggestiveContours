@@ -286,8 +286,6 @@ private:
   GLuint _normalVbo = 0;
   GLuint _texCoordVbo = 0;
   GLuint _ibo = 0;
-  GLuint _curvatureKappa1Vbo = 0;
-  GLuint _curvatureKappa2Vbo = 0;
   GLuint _radialCurvatureVbo=0;
   GLuint _eligibleForSuggestiveContourVbo = 0;
 };
