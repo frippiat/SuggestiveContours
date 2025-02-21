@@ -80,55 +80,8 @@ bool g_appTimer2StoppedP = true;
 unsigned int g_availableTextureSlot = 0;
 
 //contours
-int g_contourMode= false;
+int g_contourMode= 0;
 
-// int g_albedoTexLoaded = 0;
-// GLuint g_albedoTex;
-// unsigned int g_albedoTexOnGPU;
-
-// int g_normalTexLoaded = 0;
-// GLuint g_normalTex;
-// unsigned int g_normalTexOnGPU;
-
-GLuint loadTextureFromFileToGPU(const std::string &filename)
-{
-  int width, height, numComponents;
-  // Loading the image in CPU memory using stbd_image
-  unsigned char *data = stbi_load(
-    filename.c_str(),
-    &width,
-    &height,
-    &numComponents, // 1 for a 8 bit greyscale image, 3 for 24bits RGB image, 4 for 32bits RGBA image
-    0);
-
-  // Create a texture in GPU memory
-  GLuint texID;
-  glGenTextures(1, &texID);
-  glBindTexture(GL_TEXTURE_2D, texID);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-  glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-  // Uploading the image data to GPU memory
-  glTexImage2D(
-    GL_TEXTURE_2D,
-    0,
-    (numComponents == 1 ? GL_RED : numComponents == 3 ? GL_RGB : GL_RGBA), // For greyscale images, we store them in the RED channel
-    width,
-    height,
-    0,
-    (numComponents == 1 ? GL_RED : numComponents == 3 ? GL_RGB : GL_RGBA), // For greyscale images, we store them in the RED channel
-    GL_UNSIGNED_BYTE,
-    data);
-
-  // Generating mipmaps for filtered texture fetch
-  glGenerateMipmap(GL_TEXTURE_2D);
-
-  // Freeing the now useless CPU memory
-  stbi_image_free(data);
-  glBindTexture(GL_TEXTURE_2D, 0); // unbind the texture
-  return texID;
-}
 
 struct Light {
   glm::mat4 depthMVP;
@@ -182,7 +135,6 @@ struct Scene {
     }
 
     // rhino
-    mainShader->set("material.albedo", glm::vec3(1, 0.71, 0.29));
     mainShader->set("modelMat", rhinoMat);
     mainShader->set("normMat", glm::mat3(glm::inverseTranspose(rhinoMat)));
     rhino->render();
@@ -270,16 +222,6 @@ void keyCallback(GLFWwindow *window, int key, int scancode, int action, int mods
     else
     {
       g_contourMode=2;
-      g_scene.calculatePrincipalCurvatureCenterMesh();
-    }
-} else if (action == GLFW_PRESS && key == GLFW_KEY_F4) {
-    if(g_contourMode==3)
-    {
-      g_contourMode=0;
-    }
-    else
-    {
-      g_contourMode=3;
       g_scene.calculateRadialCurvatureCenterMesh();
     }
 } else if(action == GLFW_PRESS && key == GLFW_KEY_ESCAPE) {
@@ -435,16 +377,6 @@ void initScene(const std::string &meshFilename)
     g_scene.rhino->init();
   }
 
-  // Load textures
-  {
-  }
-
-  // Setup textures on the GPU
-  {
-  }
-  {
-  }
-
   // Setup lights
   const glm::vec3 pos[3] = {
     glm::vec3(100.0, 100.0, 100.0),
@@ -501,9 +433,19 @@ void render()
   g_scene.render();
 }
 
-// Update any accessible variable based on the current time
+
+/**
+ * This function has been heavily modified for the suggestive contouring project.
+ *
+ * Updates global state variables based on the current time. It increments timers for rotation
+ * (around the Y-axis with the T key and around the X-axis with the Y key), computes the corresponding
+ * rotation matrices, and updates the transformation applied to the mesh.
+ *
+ * @param currentTime The current time in seconds.
+ */
 void update(float currentTime)
 {
+
   // Update first timer (rotation about Y)
   if(!g_appTimerStoppedP) {
     float dt = currentTime - g_appTimerLastColckTime;

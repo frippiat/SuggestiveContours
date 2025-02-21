@@ -231,6 +231,15 @@ void Mesh::clear()
   }
 }
 
+
+/**
+ * This function has been created for the suggestive contouring project.
+ *
+ * Computes the principal curvatures and principal directions at each vertex of the mesh.
+ * Curvature information is aggregated from adjacent triangles and eigen-decomposition
+ * is performed on the resulting curvature tensor to extract the minimum and maximum
+ * curvatures along with their corresponding directions.
+ */
 void Mesh::calculatePrincipalCurvature() {
     // Resize storage for curvature results
     principalCurvatureKappa1.resize(_vertexPositions.size(), 0.0f);
@@ -321,20 +330,17 @@ void Mesh::calculatePrincipalCurvature() {
           }
       }
     }
-
-    /*
-    std::cout<<"\n Values in the kappa1 array"<< std::endl;
-    for (size_t i = 0; i < principalCurvatureKappa1.size(); ++i) {
-        std::cout << "Kappa1[" << i << "] = " << principalCurvatureKappa1[i] << std::endl;
-    }
-
-    std::cout<<"\n Values in the kappa2 array"<< std::endl;
-    for (size_t i = 0; i < principalCurvatureKappa2.size(); ++i) {
-        std::cout << "Kappa2[" << i << "] = " << principalCurvatureKappa2[i] << std::endl;
-    }
-    */
 }
 
+
+/**
+ * This function has been created for the suggestive contouring project.
+ *
+ * Computes the one-ring neighborhood for each vertex in the mesh. For each vertex,
+ * the function gathers all adjacent vertices that share a common triangle.
+ *
+ * @return A vector of sets, where each set contains the indices of neighboring vertices.
+ */
 std::vector<std::set<unsigned int>> Mesh::computeOneRingNeighbors() const {
   std::vector<std::set<unsigned int>> neighbors(_vertexPositions.size());
   for (const auto &tri : _triangleIndices) {
@@ -348,6 +354,18 @@ std::vector<std::set<unsigned int>> Mesh::computeOneRingNeighbors() const {
   return neighbors;
 }
 
+
+/**
+ * This function has been created for the suggestive contouring project.
+ *
+ * Computes per-triangle gradients of the radial curvature and accumulates these contributions
+ * for each vertex. For each triangle, the barycentric gradients of the coordinate functions are computed
+ * and weighted by the interior angles. The results are stored in gradAccum (gradient vectors) and
+ * weightAccum (corresponding weights).
+ *
+ * @param gradAccum A reference to a vector to store the accumulated gradient vectors for each vertex.
+ * @param weightAccum A reference to a vector to store the accumulated weights for each vertex.
+ */
 void Mesh::computeTriangleGradientAccumulators(std::vector<glm::vec3> &gradAccum,
                                                  std::vector<float> &weightAccum) const {
   // Initialize accumulators for each vertex.
@@ -373,7 +391,7 @@ void Mesh::computeTriangleGradientAccumulators(std::vector<glm::vec3> &gradAccum
       glm::vec3 gradLambda_j = glm::cross(n, p_i - p_k) / area2;
       glm::vec3 gradLambda_k = glm::cross(n, p_j - p_i) / area2;
 
-      // Radial curvature at vertices (assumed computed already).
+      // Radial curvature at vertices (previously computed) 
       float r_i = radialCurvature[i];
       float r_j = radialCurvature[j];
       float r_k = radialCurvature[k];
@@ -402,6 +420,19 @@ void Mesh::computeTriangleGradientAccumulators(std::vector<glm::vec3> &gradAccum
 }
 
 
+/**
+ * This function has been created for the suggestive contouring project.
+ *
+ * Computes the directional derivative of the radial curvature at each vertex.
+ * Using the accumulated per-vertex gradients (gradAccum) and corresponding weights (weightAccum),
+ * the function averages the gradient at each vertex and projects it onto the view-projected tangent
+ * direction determined from the camera position.
+ *
+ * @param gradAccum The per-vertex accumulated gradient vectors.
+ * @param weightAccum The per-vertex accumulated weights.
+ * @param cameraPosition The position of the camera.
+ * @return A vector of directional derivative values for each vertex.
+ */
 std::vector<float> Mesh::computeDirectionalDerivatives(const std::vector<glm::vec3>& gradAccum,
                                                          const std::vector<float>& weightAccum,
                                                          const glm::vec3 &cameraPosition) const {
@@ -412,23 +443,39 @@ std::vector<float> Mesh::computeDirectionalDerivatives(const std::vector<glm::ve
       glm::vec3 viewVec = glm::normalize(cameraPosition - _vertexPositions[v]);
       glm::vec3 normal = glm::normalize(_vertexNormals[v]);
 
-      // Project viewVec onto the tangent plane to get w.
+      // Project viewVec onto the tangent plane to get w
       glm::vec3 w = glm::normalize(viewVec - glm::dot(viewVec, normal) * normal);
       
-      // Compute directional derivative along w.
+      // Compute directional derivative along w
       dirDeriv[v] = glm::dot(grad, w);
   }
   return dirDeriv;
 }
 
 
+/**
+ * This function has been created for the suggestive contouring project.
+ *
+ * Applies derivative and view-dependent thresholds to the computed directional derivatives, and
+ * then performs hysteresis filtering to enhance contour continuity. Vertices with derivatives
+ * above a high threshold (t_high) are marked as strong, those between a low (t_low) and high threshold
+ * as weak, and weak vertices adjacent to strong ones are upgraded.
+ *
+ * @param dirDeriv The vector of directional derivative values for each vertex.
+ * @param neighbors The one-ring neighborhood for each vertex.
+ * @param t_high The high threshold for the directional derivative.
+ * @param t_low The low threshold for the directional derivative.
+ * @param theta_c The view-dependent threshold angle (in radians).
+ * @param cameraPosition The current position of the camera.
+ * @return A vector of integers indicating the eligibility (e.g., 0 for not eligible, 2 for strong).
+ */
 std::vector<int> Mesh::applyThresholdsAndHysteresis(const std::vector<float> &dirDeriv,
                                                       const std::vector<std::set<unsigned int>> &neighbors,
                                                       float t_high, float t_low, float theta_c,
                                                       const glm::vec3 &cameraPosition) const {
   std::vector<int> eligibility(_vertexPositions.size(), 0);
   
-  // First, assign initial eligibility based on derivative and view conditions.
+  // Assign initial eligibility based on derivative and view conditions.
   for (unsigned int v = 0; v < _vertexPositions.size(); v++) {
       glm::vec3 viewVec = glm::normalize(cameraPosition - _vertexPositions[v]);
       glm::vec3 normal = glm::normalize(_vertexNormals[v]);
@@ -464,38 +511,19 @@ std::vector<int> Mesh::applyThresholdsAndHysteresis(const std::vector<float> &di
 }
 
 
-// This function approximates the partial derivative (gradient) of the radial curvature at each vertex
-// and marks a vertex as eligible for a suggestive contour if the (average) difference per unit length
-// exceeds a small threshold.
-// 
-// Theory & Sources:
-// The radial curvature R is a view–dependent scalar field defined at each vertex. To decide if a vertex
-// should be highlighted for suggestive contours, we examine the change of R on the surface. A common
-// approach in discrete differential geometry is to approximate the gradient (or directional derivative)
-// of a scalar function at a vertex by taking finite differences with its neighboring vertices.
-// One typical formula is:
-// 
-//    |∇R(v)| ≈ (1/|N(v)|) Σ₍ᵤ∈N(v)₎ |R(u) − R(v)| / ||p(u) − p(v)||
-// 
-// where N(v) is the set of vertices adjacent to vertex v and p(u) is the position of vertex u.
-// This approach is inspired by work such as Meyer et al., "Discrete Differential-Geometry Operators for
-// Triangulated 2-Manifolds" (2003). In our implementation, if the computed average gradient is above a
-// (tiny) threshold (here 1e-6), we mark the vertex as eligible.
-
-// In Mesh.cpp
-
-// Compute the per–vertex directional derivative of radial curvature 
-// using a triangle–wise gradient with angle weighting. 
-// 'cameraPosition' is passed in to compute the view vector at each vertex.
-
-// In Mesh.cpp
-
-// This function computes a triangle–wise gradient of the radial curvature using
-// angle–weighted barycentric gradients, then applies two thresholds and hysteresis
-// filtering to mark vertices as eligible for suggestive contours.
-// 'cameraPosition' is needed to compute view–dependent terms.
+/**
+ * This function has been created for the suggestive contouring project.
+ *
+ * Determines which vertices in the mesh are eligible for suggestive contours.
+ * It integrates the following steps: computes per-triangle gradient accumulators, builds the one-ring
+ * connectivity, computes per-vertex directional derivatives, and applies both derivative and view-dependent
+ * thresholds along with hysteresis filtering. The final eligibility information is stored internally for rendering.
+ *
+ * @param cameraPosition The current position of the camera.
+ */
 void Mesh::verify_which_vertex_is_eligible_for_in_a_suggestive_contour(const glm::vec3 &cameraPosition) {
-    // Define thresholds (adjust as needed)
+    
+    // Define thresholds
     const float t_high = 0.005f;            // Strong derivative threshold
     const float t_low  = 0.002f;            // Weak derivative threshold
     const float theta_c = glm::radians(20.0f); // Minimum view angle in radians
@@ -522,9 +550,15 @@ void Mesh::verify_which_vertex_is_eligible_for_in_a_suggestive_contour(const glm
 }
 
 
-
-
-
+/**
+ * This function has been created for the suggestive contouring project.
+ *
+ * Computes the radial curvature at each vertex of the mesh using Euler's formula.
+ * This view-dependent curvature is updated based on the current camera position and is critical for the
+ * extraction of suggestive contours.
+ *
+ * @param cameraPosition The current position of the camera.
+ */
 void Mesh::calculateRadialCurvature(const glm::vec3& cameraPosition) {
     // Resize the storage for radial curvature
     radialCurvature.resize(_vertexPositions.size(), 0.0f);
@@ -548,13 +582,6 @@ void Mesh::calculateRadialCurvature(const glm::vec3& cameraPosition) {
     }
 
     verify_which_vertex_is_eligible_for_in_a_suggestive_contour(cameraPosition);
-
-    /*
-  std::cout<<"\n Values in the radial array"<< std::endl;
-    for (size_t i = 0; i < radialCurvature.size(); ++i) {
-        std::cout << "Kappa2[" << i << "] = " << radialCurvature[i] << std::endl;
-    }
-  */
 }
 
 

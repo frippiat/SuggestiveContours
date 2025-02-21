@@ -10,12 +10,6 @@ struct LightSource {
 int numberOfLights = 3;
 uniform LightSource lightSources[3];
 
-struct Material {
-  vec3 albedo;
-};
-
-uniform Material material;
-
 uniform vec3 camPos;
 uniform int u_contourMode;
 
@@ -43,9 +37,7 @@ void main() {
       if(a_light.isActive == 1) { // consider active lights only
         vec3 wi = normalize(a_light.position - fPosition); // unit vector pointing to the light
         vec3 Li = a_light.color*a_light.intensity;
-        vec3 albedo = material.albedo;
-
-        radiance += Li*albedo*max(dot(n, wi), 0);
+        radiance += Li*max(dot(n, wi), 0);
       }
     }
     colorOut = vec4(radiance, 1.0); // build an RGBA value from an RGB one
@@ -55,13 +47,13 @@ void main() {
     colorOut = vec4(0.8,0.8,0.8,1.0); 
     if ((abs(dotProduct)<0.001) && (u_contourMode==1))
     {
-      //Reminder: the better the quality of the mesh, the better the quality of the contours
+      // Display silhouettes/occluding contours
       colorOut = vec4(0.1,0.1,0.6, 1.0);
     }
 
     if  ((abs(fRadialCurvature)<0.003) && (u_contourMode==2))
     {
-      //Reminder: the better the quality of the mesh, the better the quality of the contours
+      // Display suggestive contours
       colorOut = vec4(0.6,0.1,0.1, 1.0);
     }
   } 

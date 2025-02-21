@@ -23,16 +23,18 @@ void main() {
   fNormal = normMat*vNormal;
   fTexCoord = vTexCoord;
 
-  gl_Position =  projMat*viewMat*modelMat*vec4(vPosition, 1.0); // mandatory
+  gl_Position =  projMat*viewMat*modelMat*vec4(vPosition, 1.0);
 
   vec3 v = normalize(camPos - fPosition);
   vec3 n = normalize(fNormal);
 
-
-  //TRUE CONTOURS
+  // Calculate which vertexes are on a silhouette
   dotProduct = dot(fNormal, v);
 
+  // Pass radial curvature and pass which vertex is eligible for being on a suggestive contour
   fRadialCurvature=vRadialCurvature;
   if(vEligibleForSuggestiveContour==0)
-  {fRadialCurvature=100;}  
+  {
+    fRadialCurvature=100;
+  }  
 }
