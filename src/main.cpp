@@ -298,7 +298,7 @@ void initGLFW()
   glfwWindowHint(GLFW_RESIZABLE, GL_TRUE);
 
   // Create the window
-  g_window = glfwCreateWindow(g_windowWidth, g_windowHeight, "IGR202 - Practical", nullptr, nullptr);
+  g_window = glfwCreateWindow(g_windowWidth, g_windowHeight, "Suggestive Contouriing Implementation - Vincent Frippiat", nullptr, nullptr);
   if(!g_window) {
     std::cerr << "ERROR: Failed to open window" << std::endl;
     glfwTerminate();
